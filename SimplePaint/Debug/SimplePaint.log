@@ -10,5 +10,10 @@ d:\study place\inti\lecture materials\csci336 computer graphics\assignments\assi
 d:\study place\inti\lecture materials\csci336 computer graphics\assignments\assignment1\simplepaint\simplepaint\simplepaint.cpp(137): warning C4305: 'initializing': truncation from 'double' to 'float'
 d:\study place\inti\lecture materials\csci336 computer graphics\assignments\assignment1\simplepaint\simplepaint\simplepaint.cpp(138): warning C4305: 'initializing': truncation from 'double' to 'float'
 d:\study place\inti\lecture materials\csci336 computer graphics\assignments\assignment1\simplepaint\simplepaint\simplepaint.cpp(142): warning C4305: '+=': truncation from 'double' to 'float'
+  Shape.cpp
+  Icon.cpp
+  Button.cpp
+  Generating Code...
+  LINK : D:\Study Place\INTI\Lecture Materials\CSCI336 Computer Graphics\Assignments\Assignment1\SimplePaint\Debug\SimplePaint.exe not found or not built by the last incremental link; performing full link
   SimplePaint.vcxproj -> D:\Study Place\INTI\Lecture Materials\CSCI336 Computer Graphics\Assignments\Assignment1\SimplePaint\Debug\SimplePaint.exe
   SimplePaint.vcxproj -> D:\Study Place\INTI\Lecture Materials\CSCI336 Computer Graphics\Assignments\Assignment1\SimplePaint\Debug\SimplePaint.pdb (Partial PDB)

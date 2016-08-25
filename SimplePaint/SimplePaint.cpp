@@ -68,8 +68,6 @@ Icon makeIcon(ShapeType shapeType, float width, float height, Vertex2F centerPoi
 
 	Shape shape;
 	shape.setShapeType(shapeType);
-
-	std::cout << centerPoint.x << " " << centerPoint.y << std::endl;
 	
 	switch (shapeType) {
 		case S_POINT:
