@@ -11,9 +11,23 @@
 #include "Button.h"
 
 const int MAX_BUTTON_COUNT = 8;
+int windowWidth = 640, windowHeight = 480;
 std::vector<Button*> ptrButtons;
 
+void init(void)
+{
+	glClearColor(0.8, 0.8, 0.8, 0.0);
+	glColor3f(1.0f, 1.0f, 1.0f);
+	glMatrixMode(GL_PROJECTION);	
+	glLoadIdentity();
+	gluOrtho2D(0, 640, 0, 480);
+}
+
 void renderButton() {
+	glColor3f(0.0, 0.0, 0.0);
+	glPointSize(2);
+	glLineWidth(2);
+
 	for (int i = 0; i < MAX_BUTTON_COUNT; i++) {
 		glBegin(GL_LINE_LOOP);
 			glVertex2f(ptrButtons[i]->getShape().getVertex(0).x, ptrButtons[i]->getShape().getVertex(0).y);
@@ -45,14 +59,6 @@ void renderButton() {
 			}
 		}
 	}
-
-	glFlush();
-}
-
-void renderScene() {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	renderButton();
 }
 
 Icon makeIcon(ShapeType shapeType, float width, float height, Vertex2F centerPoint) {
@@ -111,33 +117,34 @@ Icon makeIcon(ShapeType shapeType, float width, float height, Vertex2F centerPoi
 }
 
 void initUIButton() {
-	const float VERTEX_TOP_POS_Y = 0.95;
-	const float VERTEX_BOTTOM_POS_Y = 0.75;
-	const float VERTEX_LEFT_DX = 0.05;
-	const float VERTEX_RIGHT_DX = 0.20;
+	const float BUTTON_HEIGHT = 70.0;
+	const float BUTTON_WIDTH = 70.0;
+	const float BUTTON_PADDING = 5.0;
 	const ShapeType SHAPE_TYPES[MAX_BUTTON_COUNT] = { S_POINT, LINE, TRIANGLE, TRIANGLE_F, RECTANGLE, RECTANGLE_F, OVAL, OVAL_F };
 
-	float vertexX = -1.0f;
-	float buttonWidth = VERTEX_RIGHT_DX - VERTEX_LEFT_DX;
-	float buttonHeight = VERTEX_TOP_POS_Y - VERTEX_BOTTOM_POS_Y;
+	Vertex2F vertex;
+	vertex.x = 0.0f;
+	vertex.y = windowHeight - BUTTON_PADDING;
 
 	for (int i = 0; i < MAX_BUTTON_COUNT; i++) {
+		vertex.x += BUTTON_PADDING;
+
 		Button* ptrButton = new Button();
-		ptrButton->addShapeVertex(vertexX + VERTEX_RIGHT_DX, VERTEX_TOP_POS_Y);
-		ptrButton->addShapeVertex(vertexX + VERTEX_RIGHT_DX, VERTEX_BOTTOM_POS_Y);
-		ptrButton->addShapeVertex(vertexX + VERTEX_LEFT_DX, VERTEX_BOTTOM_POS_Y);
-		ptrButton->addShapeVertex(vertexX + VERTEX_LEFT_DX, VERTEX_TOP_POS_Y);
+		ptrButton->addShapeVertex(vertex.x + BUTTON_WIDTH, vertex.y);
+		ptrButton->addShapeVertex(vertex.x + BUTTON_WIDTH, vertex.y - BUTTON_HEIGHT);
+		ptrButton->addShapeVertex(vertex.x, vertex.y - BUTTON_HEIGHT);
+		ptrButton->addShapeVertex(vertex.x, vertex.y);
 		ptrButtons.push_back(ptrButton);
 
 		Vertex2F centerPoint;
-		centerPoint.x = vertexX + VERTEX_LEFT_DX + (buttonWidth / 2.0);
-		centerPoint.y = VERTEX_TOP_POS_Y - (buttonHeight / 2.0);
-		float iconHeight = VERTEX_TOP_POS_Y - VERTEX_BOTTOM_POS_Y - 0.05;
-		float iconWidth = VERTEX_RIGHT_DX - VERTEX_LEFT_DX - 0.05;
+		centerPoint.x = vertex.x + (BUTTON_WIDTH / 2.0);
+		centerPoint.y = vertex.y - (BUTTON_HEIGHT / 2.0);
+		float iconHeight = BUTTON_HEIGHT - 20.0;
+		float iconWidth = BUTTON_WIDTH - 20.0;
 		
 		ptrButton->setIcon(makeIcon(SHAPE_TYPES[i], iconWidth, iconHeight, centerPoint));
 
-		vertexX += 0.2;
+		vertex.x += BUTTON_WIDTH;
 	}
 }
 
@@ -148,14 +155,24 @@ void disposeUIButton() {
 	}
 }
 
+
+void renderScene() {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	renderButton();
+
+	glFlush();
+}
+
 int main(int argc, char** argv) {
 	initUIButton();
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_SINGLE | GLUT_DEPTH);
 	glutInitWindowPosition(100, 100);
-	glutInitWindowSize(640, 480);
+	glutInitWindowSize(windowWidth, windowHeight);
 	glutCreateWindow("CSCI336-Assignment1 Simple Paint");
+	init();
 
 	glutDisplayFunc(renderScene);
 
