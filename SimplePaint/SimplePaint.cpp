@@ -11,7 +11,12 @@
 #include "Button.h"
 
 const int MAX_BUTTON_COUNT = 8;
-int windowWidth = 640, windowHeight = 480;
+
+int windowWidth = 640;
+int windowHeight = 480;
+ShapeType shapeTypeSelected = NONE;
+Vertex2F mouseDownPoint;
+Vertex2F mouseUpPoint;
 std::vector<Button*> ptrButtons;
 
 Icon makeIcon(ShapeType shapeType, float width, float height, Vertex2F centerPoint) {
@@ -85,6 +90,7 @@ void initUIButton() {
 		Button* ptrButton = new Button();
 		ptrButton->setWidth(BUTTON_WIDTH);
 		ptrButton->setHeight(BUTTON_HEIGHT);
+		ptrButton->addShapeType(SHAPE_TYPES[i]);
 		ptrButton->addShapeVertex(vertex.x + BUTTON_WIDTH, vertex.y);
 		ptrButton->addShapeVertex(vertex.x + BUTTON_WIDTH, vertex.y - BUTTON_HEIGHT);
 		ptrButton->addShapeVertex(vertex.x, vertex.y - BUTTON_HEIGHT);
@@ -111,22 +117,30 @@ void disposeUIButton() {
 }
 
 void renderButton() {
-	glColor3f(0.0, 0.0, 0.0);
 	glPointSize(2);
 	glLineWidth(2);
 
 	for (int i = 0; i < MAX_BUTTON_COUNT; i++) {
+		if (ptrButtons[i]->getShape().getShapeType() == shapeTypeSelected) {
+			glColor3f(1.0, 0.0, 0.0);
+		}
+		else {
+			glColor3f(0.0, 0.0, 0.0);
+		}
+
 		glBegin(GL_LINE_LOOP);
-		glVertex2f(ptrButtons[i]->getShape().getVertex(0).x, ptrButtons[i]->getShape().getVertex(0).y);
-		glVertex2f(ptrButtons[i]->getShape().getVertex(1).x, ptrButtons[i]->getShape().getVertex(1).y);
-		glVertex2f(ptrButtons[i]->getShape().getVertex(2).x, ptrButtons[i]->getShape().getVertex(2).y);
-		glVertex2f(ptrButtons[i]->getShape().getVertex(3).x, ptrButtons[i]->getShape().getVertex(3).y);
+			glVertex2f(ptrButtons[i]->getShape().getVertex(0).x, ptrButtons[i]->getShape().getVertex(0).y);
+			glVertex2f(ptrButtons[i]->getShape().getVertex(1).x, ptrButtons[i]->getShape().getVertex(1).y);
+			glVertex2f(ptrButtons[i]->getShape().getVertex(2).x, ptrButtons[i]->getShape().getVertex(2).y);
+			glVertex2f(ptrButtons[i]->getShape().getVertex(3).x, ptrButtons[i]->getShape().getVertex(3).y);
 		glEnd();
 
 		std::vector<Vertex2F> iconVertices = ptrButtons[i]->getIcon().getShape().getAllVertices();
+
+		glColor3f(0.0, 0.0, 0.0);
 		if (ptrButtons[i]->getIcon().getShape().getShapeType() == S_POINT) {
 			glBegin(GL_POINTS);
-			glVertex2f(iconVertices[0].x, iconVertices[0].y);
+				glVertex2f(iconVertices[0].x, iconVertices[0].y);
 			glEnd();
 		}
 		else {
@@ -148,8 +162,38 @@ void renderButton() {
 	}
 }
 
+void setUIButtonClicked() {
+	std::cout << "Clicked" << std::endl;
+
+	for (int i = 0; i < MAX_BUTTON_COUNT; i++) {
+		Vertex2F topLeftPoint = ptrButtons[i]->getShape().getVertex(3);
+		Vertex2F bottomRightPoint = ptrButtons[i]->getShape().getVertex(1);
+
+		if ((mouseUpPoint.x > topLeftPoint.x && mouseUpPoint.x < bottomRightPoint.x) &&
+			(mouseUpPoint.y > bottomRightPoint.y && mouseUpPoint.y < topLeftPoint.y)) {
+			shapeTypeSelected = ptrButtons[i]->getShape().getShapeType();
+		}
+	}
+}
+
+void mouseClick(int button, int state, int x, int y) {
+	if (button == GLUT_LEFT_BUTTON) {
+		if (state == GLUT_DOWN) {
+			mouseDownPoint.x = x;
+			mouseDownPoint.y = windowHeight - y;
+		}
+
+		if (state == GLUT_UP) {
+			mouseUpPoint.x = x;
+			mouseUpPoint.y = windowHeight - y;
+		}
+	}
+}
+
 void renderScene() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	setUIButtonClicked();
 
 	renderButton();
 
@@ -196,6 +240,7 @@ int main(int argc, char** argv) {
 
 	glutDisplayFunc(renderScene);
 	glutReshapeFunc(reshapeScene);
+	glutMouseFunc(mouseClick);
 
 	glutMainLoop();
 

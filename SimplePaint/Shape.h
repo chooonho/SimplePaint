@@ -8,6 +8,7 @@ struct Vertex2F {
 };
 
 enum ShapeType {
+	NONE,
 	S_POINT,
 	LINE,
 	TRIANGLE,

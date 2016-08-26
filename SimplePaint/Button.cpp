@@ -54,3 +54,7 @@ void Button::addShapeVertex(Vertex2F vertex) {
 void Button::addShapeVertex(float x, float y) {
 	mShape.addVertex(x, y);
 }
+
+void Button::addShapeType(ShapeType shapeType) {
+	mShape.setShapeType(shapeType);
+}

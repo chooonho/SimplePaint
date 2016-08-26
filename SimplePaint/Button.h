@@ -26,6 +26,7 @@ class Button {
 		void setCenterPoint(float, float);
 		void addShapeVertex(Vertex2F);
 		void addShapeVertex(float, float);
+		void addShapeType(ShapeType);
 	private:
 		Shape mShape;
 		Icon mIcon;
