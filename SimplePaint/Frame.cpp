@@ -1,0 +1,34 @@
+
+#include "Frame.h"
+
+Shape Frame::getOutline() {
+	return mOutline;
+}
+
+Shape Frame::getShapeDrawn() {
+	return mShapeDrawn;
+}
+
+float Frame::getHeight() {
+	return mHeight;
+}
+
+float Frame::getWidth() {
+	return mWidth;
+}
+
+void Frame::setHeight(float height) {
+	mHeight = height;
+}
+
+void Frame::setWidth(float width) {
+	mWidth = width;
+}
+
+void Frame::setShapeDrawn(Shape shapeDrawn) {
+	mShapeDrawn = shapeDrawn;
+}
+
+void Frame::setOutline(Shape outline) {
+	mOutline = outline;
+}

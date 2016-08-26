@@ -111,12 +111,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Button.cpp" />
+    <ClCompile Include="Frame.cpp" />
     <ClCompile Include="Icon.cpp" />
     <ClCompile Include="Shape.cpp" />
     <ClCompile Include="SimplePaint.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Button.h" />
+    <ClInclude Include="Frame.h" />
     <ClInclude Include="Icon.h" />
     <ClInclude Include="Shape.h" />
   </ItemGroup>
