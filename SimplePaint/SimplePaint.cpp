@@ -14,10 +14,14 @@ const int MAX_BUTTON_COUNT = 8;
 
 int windowWidth = 640;
 int windowHeight = 480;
+bool drawStart = false;
+Shape* shapeDrawn = NULL;
 ShapeType shapeTypeSelected = NONE;
 Vertex2F mouseDownPoint;
+Vertex2F mouseDragPoint;
 Vertex2F mouseUpPoint;
 std::vector<Button*> ptrUIButtons;
+std::vector<Shape*> shapesDrawn;
 
 Icon makeIcon(ShapeType shapeType, float width, float height, Vertex2F centerPoint) {
 	const double MATH_PI = 3.141592;
@@ -116,6 +120,13 @@ void disposeUIButton() {
 	}
 }
 
+void disposeDrawnShape() {
+	while (!shapesDrawn.empty()) {
+		delete shapesDrawn.back();
+		shapesDrawn.pop_back();
+	}
+}
+
 void renderUIButton() {
 	glPointSize(2);
 	glLineWidth(2);
@@ -173,16 +184,172 @@ void setUIButtonClicked() {
 	}
 }
 
+void draw() {
+	std::vector<Vertex2F> shapeDrawnVertices;
+
+	for (int i = 0; i < shapesDrawn.size(); i++) {
+		shapeDrawnVertices = shapesDrawn[i]->getAllVertices();
+
+		if (shapesDrawn[i]->getShapeType() == S_POINT) {
+			glBegin(GL_POINTS);
+				for (int j = 0; j < shapeDrawnVertices.size(); j++) {
+					glVertex2f(shapeDrawnVertices[j].x, shapeDrawnVertices[j].y);
+				}
+			glEnd();
+		}
+		else {
+			if (shapesDrawn[i]->getIsFilled()) {
+				glBegin(GL_POLYGON);
+				for (int j = 0; j < shapeDrawnVertices.size(); j++) {
+					glVertex2f(shapeDrawnVertices[j].x, shapeDrawnVertices[j].y);
+				}
+				glEnd();
+			}
+			else {
+				glBegin(GL_LINE_LOOP);
+				for (int j = 0; j < shapeDrawnVertices.size(); j++) {
+					glVertex2f(shapeDrawnVertices[j].x, shapeDrawnVertices[j].y);
+				}
+				glEnd();
+			}
+		}
+	}
+
+	//shapeDrawnVertices.clear();
+	//shapeDrawnVertices = shapeDrawn->getAllVertices();
+	//if (shapeDrawnVertices.size() == 0) {
+	//	return;
+	//}
+
+	//if (shapeDrawn->getShapeType() == S_POINT) {
+	//	glBegin(GL_POINTS);
+	//		glVertex2f(shapeDrawnVertices[0].x, shapeDrawnVertices[0].y);
+	//	glEnd();
+	//}
+	//else {
+	//	if (shapeDrawn->getIsFilled()) {
+	//		glBegin(GL_POLYGON);
+	//			for (int j = 0; j < shapeDrawnVertices.size(); j++) {
+	//				glVertex2f(shapeDrawnVertices[j].x, shapeDrawnVertices[j].y);
+	//			}
+	//		glEnd();
+	//	}
+	//	else {
+	//		glBegin(GL_LINE_LOOP);
+	//			for (int j = 0; j < shapeDrawnVertices.size(); j++) {
+	//				glVertex2f(shapeDrawnVertices[j].x, shapeDrawnVertices[j].y);
+	//			}
+	//		glEnd();
+	//	}
+	//}
+}
+
+void handleStartDraw(float x, float y) {
+	if (shapeTypeSelected == NONE) {
+		return;
+	}
+
+	drawStart = true;
+
+	shapeDrawn = new Shape();
+	shapeDrawn->addVertex(x, y);
+	shapeDrawn->addVertex(x, y);
+	shapeDrawn->addVertex(x, y);
+	shapeDrawn->addVertex(x, y);
+	shapeDrawn->setShapeType(shapeTypeSelected);
+	if (shapeTypeSelected == TRIANGLE_F || shapeTypeSelected == RECTANGLE_F || shapeTypeSelected == OVAL_F) {
+		shapeDrawn->setIsFilled(true);
+	}
+
+	shapesDrawn.push_back(shapeDrawn);
+}
+
+void handleContinueDraw(float x, float y) {
+	if (!drawStart || shapeDrawn == NULL) {
+		return;
+	}
+
+	if (shapeDrawn->getShapeType() == S_POINT) {
+		shapeDrawn->addVertex(x, y);
+		glutPostRedisplay();
+
+		return;
+	}
+
+	shapeDrawn->clearAllVertices();
+
+	if (x > mouseDownPoint.x) {
+		if (y > mouseDownPoint.y) {
+			shapeDrawn->addVertex(x, y);
+			shapeDrawn->addVertex(x, mouseDownPoint.y);
+			shapeDrawn->addVertex(mouseDownPoint.x, mouseDownPoint.y);
+			shapeDrawn->addVertex(mouseDownPoint.x, y);
+		}
+		else {
+			shapeDrawn->addVertex(x, mouseDownPoint.y);
+			shapeDrawn->addVertex(x, y);
+			shapeDrawn->addVertex(mouseDownPoint.x, y);
+			shapeDrawn->addVertex(mouseDownPoint.x, mouseDownPoint.y);
+		}
+	}
+	else {
+		if (y > mouseDownPoint.y) {
+			shapeDrawn->addVertex(mouseDownPoint.x, mouseDownPoint.y);
+			shapeDrawn->addVertex(mouseDownPoint.x, y);
+			shapeDrawn->addVertex(x, y);
+			shapeDrawn->addVertex(x, mouseDownPoint.y);
+		}
+		else {
+			shapeDrawn->addVertex(mouseDownPoint.x, y);
+			shapeDrawn->addVertex(mouseDownPoint.x, mouseDownPoint.y);
+			shapeDrawn->addVertex(x, mouseDownPoint.y);
+			shapeDrawn->addVertex(x, y);
+		}
+	}
+
+	glutPostRedisplay();
+}
+
+void handleCompleteDraw(float x, float y) {
+	if (!drawStart || shapeDrawn == NULL) {
+		return;
+	}
+
+	drawStart = false;
+
+	if (shapeDrawn->getShapeType() != S_POINT && (x == mouseDownPoint.x && y == mouseDownPoint.y)) {
+		delete shapeDrawn;
+		shapeDrawn = NULL;
+
+		shapesDrawn.pop_back();
+	}
+
+	glutPostRedisplay();
+}
+
+void mouseDrag(int x, int y) {
+	mouseDragPoint.x = x;
+	mouseDragPoint.y = windowHeight - y;
+
+	if (drawStart) {
+		handleContinueDraw(x, windowHeight - y);
+	}
+}
+
 void mouseClick(int button, int state, int x, int y) {
 	if (button == GLUT_LEFT_BUTTON) {
 		if (state == GLUT_DOWN) {
 			mouseDownPoint.x = x;
 			mouseDownPoint.y = windowHeight - y;
+
+			handleStartDraw(x, windowHeight - y);
 		}
 
 		if (state == GLUT_UP) {
 			mouseUpPoint.x = x;
 			mouseUpPoint.y = windowHeight - y;
+
+			handleCompleteDraw(x, windowHeight - y);
 		}
 	}
 }
@@ -193,7 +360,9 @@ void renderScene() {
 	setUIButtonClicked();
 	renderUIButton();
 
-	glFlush();
+	draw();
+
+	glutSwapBuffers();
 }
 
 void reshapeScene(int width, int height) {
@@ -228,7 +397,7 @@ int main(int argc, char** argv) {
 	initUIButton();
 
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGBA | GLUT_SINGLE | GLUT_DEPTH);
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
 	glutInitWindowPosition(100, 100);
 	glutInitWindowSize(windowWidth, windowHeight);
 	glutCreateWindow("CSCI336-Assignment1 Simple Paint");
@@ -237,6 +406,7 @@ int main(int argc, char** argv) {
 	glutDisplayFunc(renderScene);
 	glutReshapeFunc(reshapeScene);
 	glutMouseFunc(mouseClick);
+	glutMotionFunc(mouseDrag);
 
 	glutMainLoop();
 

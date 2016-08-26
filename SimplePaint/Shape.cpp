@@ -35,6 +35,10 @@ void Shape::addVertex(float x, float y) {
 	mVertices.push_back(newVertex);
 }
 
+void Shape::clearAllVertices() {
+	mVertices.clear();
+}
+
 void Shape::setVertices(std::vector<Vertex2F> vertices) {
 	mVertices = vertices;
 }

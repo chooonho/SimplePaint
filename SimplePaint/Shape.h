@@ -21,7 +21,7 @@ enum ShapeType {
 
 class Shape {
 	public:
-		Shape() { mIsFilled = false; };
+		Shape() { mIsFilled = false; mShapeType = NONE; };
 		Shape(std::vector<Vertex2F>, bool, ShapeType);
 		Vertex2F getVertex(int);
 		bool getIsFilled();
@@ -29,6 +29,7 @@ class Shape {
 		std::vector<Vertex2F> getAllVertices();
 		void addVertex(Vertex2F);
 		void addVertex(float, float);
+		void clearAllVertices();
 		void setVertices(std::vector<Vertex2F>);
 		void setIsFilled(bool);
 		void setShapeType(ShapeType);
