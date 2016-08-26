@@ -17,6 +17,10 @@ float Frame::getWidth() {
 	return mWidth;
 }
 
+bool Frame::getActive() {
+	return mActive;
+}
+
 void Frame::setHeight(float height) {
 	mHeight = height;
 }
@@ -31,6 +35,10 @@ void Frame::setShapeDrawn(Shape shapeDrawn) {
 
 void Frame::setOutline(Shape outline) {
 	mOutline = outline;
+}
+
+void Frame::setActive(bool active) {
+	mActive = active;
 }
 
 void Frame::clearOutline() {
