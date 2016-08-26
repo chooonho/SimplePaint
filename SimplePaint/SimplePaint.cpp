@@ -16,6 +16,7 @@ const int MAX_BUTTON_COUNT = 8;
 int windowWidth = 640;
 int windowHeight = 480;
 bool drawStart = false;
+bool activeFrameClicked = false;
 Frame* drawingFrame = NULL;
 ShapeType shapeTypeSelected = NONE;
 Vertex2F mouseDownPoint;
@@ -194,7 +195,6 @@ void draw() {
 		glBegin(GL_LINE_LOOP);
 			for (int j = 0; j < frameOutlineVertices.size(); j++) {
 				glVertex2f(frameOutlineVertices[j].x, frameOutlineVertices[j].y);
-				std::cout << frameOutlineVertices[j].x << " " << frameOutlineVertices[j].y << std::endl;
 			}
 		glEnd();
 		glDisable(GL_LINE_STIPPLE);
@@ -234,17 +234,20 @@ void handleStartDraw(float x, float y) {
 		return;
 	}
 
+	if (drawingFrame != NULL) {
+		drawingFrame->setActive(false);
+	}
 	drawStart = true;
 
-	Shape drawingFrameOutline;
-	drawingFrameOutline.setShapeType(RECTANGLE);
-	drawingFrameOutline.addVertex(x, y);
-	drawingFrameOutline.addVertex(x, y);
-	drawingFrameOutline.addVertex(x, y);
-	drawingFrameOutline.addVertex(x, y);
+	Shape outline;
+	outline.setShapeType(RECTANGLE);
+	outline.addVertex(x, y);
+	outline.addVertex(x, y);
+	outline.addVertex(x, y);
+	outline.addVertex(x, y);
 
 	drawingFrame = new Frame();
-	drawingFrame->setOutline(drawingFrameOutline);
+	drawingFrame->setOutline(outline);
 
 	drawingFrames.push_back(drawingFrame);
 }
@@ -254,39 +257,39 @@ void handleContinueDraw(float x, float y) {
 		return;
 	}
 
-	Shape drawingFrameOutline;
-	drawingFrameOutline.setShapeType(RECTANGLE);
+	Shape outline;
+	outline.setShapeType(RECTANGLE);
 
 	if (x > mouseDownPoint.x) {
 		if (y > mouseDownPoint.y) {
-			drawingFrameOutline.addVertex(x, y);
-			drawingFrameOutline.addVertex(x, mouseDownPoint.y);
-			drawingFrameOutline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
-			drawingFrameOutline.addVertex(mouseDownPoint.x, y);
+			outline.addVertex(x, y);
+			outline.addVertex(x, mouseDownPoint.y);
+			outline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
+			outline.addVertex(mouseDownPoint.x, y);
 		}
 		else {
-			drawingFrameOutline.addVertex(x, mouseDownPoint.y);
-			drawingFrameOutline.addVertex(x, y);
-			drawingFrameOutline.addVertex(mouseDownPoint.x, y);
-			drawingFrameOutline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
+			outline.addVertex(x, mouseDownPoint.y);
+			outline.addVertex(x, y);
+			outline.addVertex(mouseDownPoint.x, y);
+			outline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
 		}
 	}
 	else {
 		if (y > mouseDownPoint.y) {
-			drawingFrameOutline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
-			drawingFrameOutline.addVertex(mouseDownPoint.x, y);
-			drawingFrameOutline.addVertex(x, y);
-			drawingFrameOutline.addVertex(x, mouseDownPoint.y);
+			outline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
+			outline.addVertex(mouseDownPoint.x, y);
+			outline.addVertex(x, y);
+			outline.addVertex(x, mouseDownPoint.y);
 		}
 		else {
-			drawingFrameOutline.addVertex(mouseDownPoint.x, y);
-			drawingFrameOutline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
-			drawingFrameOutline.addVertex(x, mouseDownPoint.y);
-			drawingFrameOutline.addVertex(x, y);
+			outline.addVertex(mouseDownPoint.x, y);
+			outline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
+			outline.addVertex(x, mouseDownPoint.y);
+			outline.addVertex(x, y);
 		}
 	}
 
-	drawingFrame->setOutline(drawingFrameOutline);
+	drawingFrame->setOutline(outline);
 
 	glutPostRedisplay();
 }
@@ -308,7 +311,55 @@ void handleCompleteDraw(float x, float y) {
 	glutPostRedisplay();
 }
 
+void handleDragDrawingFrame(float x, float y) {
+	if (drawingFrame == NULL) {
+		return;
+	}
+
+	if (activeFrameClicked) {
+		float offsetX = x - mouseDownPoint.x;
+		float offsetY = y - mouseDownPoint.y;
+
+		mouseDownPoint.x = x;
+		mouseDownPoint.y = y;
+
+		Shape outline;
+		outline.setShapeType(RECTANGLE);
+		outline.addVertex(drawingFrame->getOutline().getVertex(0).x + offsetX,
+										drawingFrame->getOutline().getVertex(0).y + offsetY);
+		outline.addVertex(drawingFrame->getOutline().getVertex(1).x + offsetX,
+										drawingFrame->getOutline().getVertex(1).y + offsetY);
+		outline.addVertex(drawingFrame->getOutline().getVertex(2).x + offsetX,
+										drawingFrame->getOutline().getVertex(2).y + offsetY);
+		outline.addVertex(drawingFrame->getOutline().getVertex(3).x + offsetX,
+										drawingFrame->getOutline().getVertex(3).y + offsetY);
+		drawingFrame->setOutline(outline);
+
+		glutPostRedisplay();
+	}
+}
+
+bool isActiveFrameClicked(float x, float y) {
+	if (drawingFrame == NULL) {
+		return false;
+	}
+
+	if (drawingFrame->getActive()) {
+		Vertex2F topLeftVertex = drawingFrame->getOutline().getVertex(3);
+		Vertex2F bottomRightVertex = drawingFrame->getOutline().getVertex(1);
+
+		if ((x > topLeftVertex.x && x < bottomRightVertex.x) &&
+			(y > bottomRightVertex.y && y < topLeftVertex.y)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void mouseDrag(int x, int y) {
+	handleDragDrawingFrame(x, windowHeight - y);
+
 	mouseDragPoint.x = x;
 	mouseDragPoint.y = windowHeight - y;
 
@@ -323,7 +374,10 @@ void mouseClick(int button, int state, int x, int y) {
 			mouseDownPoint.x = x;
 			mouseDownPoint.y = windowHeight - y;
 
-			handleStartDraw(x, windowHeight - y);
+			if (!(activeFrameClicked = isActiveFrameClicked(x, windowHeight - y))) {
+				activeFrameClicked = false;
+				handleStartDraw(x, windowHeight - y);
+			}
 		}
 
 		if (state == GLUT_UP) {
