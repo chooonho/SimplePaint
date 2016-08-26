@@ -16,6 +16,8 @@ class Frame {
 		void setWidth(float);
 		void setShapeDrawn(Shape);
 		void setOutline(Shape);
+		void clearOutline();
+		void clearShapeDrawn();
 	private:
 		float mHeight;
 		float mWidth;

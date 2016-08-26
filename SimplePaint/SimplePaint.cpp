@@ -9,19 +9,20 @@
 #include <vector>
 #include <iostream>
 #include "Button.h"
+#include "Frame.h"
 
 const int MAX_BUTTON_COUNT = 8;
 
 int windowWidth = 640;
 int windowHeight = 480;
 bool drawStart = false;
-Shape* shapeDrawn = NULL;
+Frame* drawingFrame = NULL;
 ShapeType shapeTypeSelected = NONE;
 Vertex2F mouseDownPoint;
 Vertex2F mouseDragPoint;
 Vertex2F mouseUpPoint;
 std::vector<Button*> ptrUIButtons;
-std::vector<Shape*> shapesDrawn;
+std::vector<Frame*> drawingFrames;
 
 Icon makeIcon(ShapeType shapeType, float width, float height, Vertex2F centerPoint) {
 	const double MATH_PI = 3.141592;
@@ -121,9 +122,9 @@ void disposeUIButton() {
 }
 
 void disposeDrawnShape() {
-	while (!shapesDrawn.empty()) {
-		delete shapesDrawn.back();
-		shapesDrawn.pop_back();
+	while (!drawingFrames.empty()) {
+		delete drawingFrames.back();
+		drawingFrames.pop_back();
 	}
 }
 
@@ -185,34 +186,18 @@ void setUIButtonClicked() {
 }
 
 void draw() {
-	std::vector<Vertex2F> shapeDrawnVertices;
+	for (int i = 0; i < drawingFrames.size(); i++) {
+		std::vector<Vertex2F> frameOutlineVertices = drawingFrames[i]->getOutline().getAllVertices();
 
-	for (int i = 0; i < shapesDrawn.size(); i++) {
-		shapeDrawnVertices = shapesDrawn[i]->getAllVertices();
-
-		if (shapesDrawn[i]->getShapeType() == S_POINT) {
-			glBegin(GL_POINTS);
-				for (int j = 0; j < shapeDrawnVertices.size(); j++) {
-					glVertex2f(shapeDrawnVertices[j].x, shapeDrawnVertices[j].y);
-				}
-			glEnd();
-		}
-		else {
-			if (shapesDrawn[i]->getIsFilled()) {
-				glBegin(GL_POLYGON);
-				for (int j = 0; j < shapeDrawnVertices.size(); j++) {
-					glVertex2f(shapeDrawnVertices[j].x, shapeDrawnVertices[j].y);
-				}
-				glEnd();
+		glEnable(GL_LINE_STIPPLE);
+		glLineStipple(1, 0xF0F0);
+		glBegin(GL_LINE_LOOP);
+			for (int j = 0; j < frameOutlineVertices.size(); j++) {
+				glVertex2f(frameOutlineVertices[j].x, frameOutlineVertices[j].y);
+				std::cout << frameOutlineVertices[j].x << " " << frameOutlineVertices[j].y << std::endl;
 			}
-			else {
-				glBegin(GL_LINE_LOOP);
-				for (int j = 0; j < shapeDrawnVertices.size(); j++) {
-					glVertex2f(shapeDrawnVertices[j].x, shapeDrawnVertices[j].y);
-				}
-				glEnd();
-			}
-		}
+		glEnd();
+		glDisable(GL_LINE_STIPPLE);
 	}
 
 	//shapeDrawnVertices.clear();
@@ -251,77 +236,73 @@ void handleStartDraw(float x, float y) {
 
 	drawStart = true;
 
-	shapeDrawn = new Shape();
-	shapeDrawn->addVertex(x, y);
-	shapeDrawn->addVertex(x, y);
-	shapeDrawn->addVertex(x, y);
-	shapeDrawn->addVertex(x, y);
-	shapeDrawn->setShapeType(shapeTypeSelected);
-	if (shapeTypeSelected == TRIANGLE_F || shapeTypeSelected == RECTANGLE_F || shapeTypeSelected == OVAL_F) {
-		shapeDrawn->setIsFilled(true);
-	}
+	Shape drawingFrameOutline;
+	drawingFrameOutline.setShapeType(RECTANGLE);
+	drawingFrameOutline.addVertex(x, y);
+	drawingFrameOutline.addVertex(x, y);
+	drawingFrameOutline.addVertex(x, y);
+	drawingFrameOutline.addVertex(x, y);
 
-	shapesDrawn.push_back(shapeDrawn);
+	drawingFrame = new Frame();
+	drawingFrame->setOutline(drawingFrameOutline);
+
+	drawingFrames.push_back(drawingFrame);
 }
 
 void handleContinueDraw(float x, float y) {
-	if (!drawStart || shapeDrawn == NULL) {
+	if (!drawStart || drawingFrame == NULL) {
 		return;
 	}
 
-	if (shapeDrawn->getShapeType() == S_POINT) {
-		shapeDrawn->addVertex(x, y);
-		glutPostRedisplay();
-
-		return;
-	}
-
-	shapeDrawn->clearAllVertices();
+	Shape drawingFrameOutline;
+	drawingFrameOutline.setShapeType(RECTANGLE);
 
 	if (x > mouseDownPoint.x) {
 		if (y > mouseDownPoint.y) {
-			shapeDrawn->addVertex(x, y);
-			shapeDrawn->addVertex(x, mouseDownPoint.y);
-			shapeDrawn->addVertex(mouseDownPoint.x, mouseDownPoint.y);
-			shapeDrawn->addVertex(mouseDownPoint.x, y);
+			drawingFrameOutline.addVertex(x, y);
+			drawingFrameOutline.addVertex(x, mouseDownPoint.y);
+			drawingFrameOutline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
+			drawingFrameOutline.addVertex(mouseDownPoint.x, y);
 		}
 		else {
-			shapeDrawn->addVertex(x, mouseDownPoint.y);
-			shapeDrawn->addVertex(x, y);
-			shapeDrawn->addVertex(mouseDownPoint.x, y);
-			shapeDrawn->addVertex(mouseDownPoint.x, mouseDownPoint.y);
+			drawingFrameOutline.addVertex(x, mouseDownPoint.y);
+			drawingFrameOutline.addVertex(x, y);
+			drawingFrameOutline.addVertex(mouseDownPoint.x, y);
+			drawingFrameOutline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
 		}
 	}
 	else {
 		if (y > mouseDownPoint.y) {
-			shapeDrawn->addVertex(mouseDownPoint.x, mouseDownPoint.y);
-			shapeDrawn->addVertex(mouseDownPoint.x, y);
-			shapeDrawn->addVertex(x, y);
-			shapeDrawn->addVertex(x, mouseDownPoint.y);
+			drawingFrameOutline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
+			drawingFrameOutline.addVertex(mouseDownPoint.x, y);
+			drawingFrameOutline.addVertex(x, y);
+			drawingFrameOutline.addVertex(x, mouseDownPoint.y);
 		}
 		else {
-			shapeDrawn->addVertex(mouseDownPoint.x, y);
-			shapeDrawn->addVertex(mouseDownPoint.x, mouseDownPoint.y);
-			shapeDrawn->addVertex(x, mouseDownPoint.y);
-			shapeDrawn->addVertex(x, y);
+			drawingFrameOutline.addVertex(mouseDownPoint.x, y);
+			drawingFrameOutline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
+			drawingFrameOutline.addVertex(x, mouseDownPoint.y);
+			drawingFrameOutline.addVertex(x, y);
 		}
 	}
+
+	drawingFrame->setOutline(drawingFrameOutline);
 
 	glutPostRedisplay();
 }
 
 void handleCompleteDraw(float x, float y) {
-	if (!drawStart || shapeDrawn == NULL) {
+	if (!drawStart || drawingFrame == NULL) {
 		return;
 	}
 
 	drawStart = false;
 
-	if (shapeDrawn->getShapeType() != S_POINT && (x == mouseDownPoint.x && y == mouseDownPoint.y)) {
-		delete shapeDrawn;
-		shapeDrawn = NULL;
+	if (x == mouseDownPoint.x && y == mouseDownPoint.y) {
+		delete drawingFrame;
+		drawingFrame = NULL;
 
-		shapesDrawn.pop_back();
+		drawingFrames.pop_back();
 	}
 
 	glutPostRedisplay();

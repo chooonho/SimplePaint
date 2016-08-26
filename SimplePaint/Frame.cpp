@@ -32,3 +32,15 @@ void Frame::setShapeDrawn(Shape shapeDrawn) {
 void Frame::setOutline(Shape outline) {
 	mOutline = outline;
 }
+
+void Frame::clearOutline() {
+	mOutline.clearAllVertices();
+	mOutline.setIsFilled(false);
+	mOutline.setShapeType(NONE);
+}
+
+void Frame::clearShapeDrawn() {
+	mShapeDrawn.clearAllVertices();
+	mShapeDrawn.setIsFilled(false);
+	mShapeDrawn.setShapeType(NONE);
+}
