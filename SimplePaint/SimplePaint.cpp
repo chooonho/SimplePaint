@@ -14,53 +14,6 @@ const int MAX_BUTTON_COUNT = 8;
 int windowWidth = 640, windowHeight = 480;
 std::vector<Button*> ptrButtons;
 
-void init(void)
-{
-	glClearColor(0.8, 0.8, 0.8, 0.0);
-	glColor3f(1.0f, 1.0f, 1.0f);
-	glMatrixMode(GL_PROJECTION);	
-	glLoadIdentity();
-	gluOrtho2D(0, 640, 0, 480);
-}
-
-void renderButton() {
-	glColor3f(0.0, 0.0, 0.0);
-	glPointSize(2);
-	glLineWidth(2);
-
-	for (int i = 0; i < MAX_BUTTON_COUNT; i++) {
-		glBegin(GL_LINE_LOOP);
-			glVertex2f(ptrButtons[i]->getShape().getVertex(0).x, ptrButtons[i]->getShape().getVertex(0).y);
-			glVertex2f(ptrButtons[i]->getShape().getVertex(1).x, ptrButtons[i]->getShape().getVertex(1).y);
-			glVertex2f(ptrButtons[i]->getShape().getVertex(2).x, ptrButtons[i]->getShape().getVertex(2).y);
-			glVertex2f(ptrButtons[i]->getShape().getVertex(3).x, ptrButtons[i]->getShape().getVertex(3).y);
-		glEnd();
-
-		std::vector<Vertex2F> iconVertices = ptrButtons[i]->getIcon().getShape().getAllVertices();
-		if (ptrButtons[i]->getIcon().getShape().getShapeType() == S_POINT) {
-			glBegin(GL_POINTS);
-				glVertex2f(iconVertices[0].x, iconVertices[0].y);
-			glEnd();
-		}
-		else {
-			if (ptrButtons[i]->getIcon().getShape().getIsFilled()) {
-				glBegin(GL_POLYGON);
-				for (int j = 0; j < iconVertices.size(); j++) {
-					glVertex2f(iconVertices[j].x, iconVertices[j].y);
-				}
-				glEnd();
-			}
-			else {
-				glBegin(GL_LINE_LOOP);
-				for (int j = 0; j < iconVertices.size(); j++) {
-					glVertex2f(iconVertices[j].x, iconVertices[j].y);
-				}
-				glEnd();
-			}
-		}
-	}
-}
-
 Icon makeIcon(ShapeType shapeType, float width, float height, Vertex2F centerPoint) {
 	const double MATH_PI = 3.141592;
 
@@ -130,6 +83,8 @@ void initUIButton() {
 		vertex.x += BUTTON_PADDING;
 
 		Button* ptrButton = new Button();
+		ptrButton->setWidth(BUTTON_WIDTH);
+		ptrButton->setHeight(BUTTON_HEIGHT);
 		ptrButton->addShapeVertex(vertex.x + BUTTON_WIDTH, vertex.y);
 		ptrButton->addShapeVertex(vertex.x + BUTTON_WIDTH, vertex.y - BUTTON_HEIGHT);
 		ptrButton->addShapeVertex(vertex.x, vertex.y - BUTTON_HEIGHT);
@@ -155,6 +110,43 @@ void disposeUIButton() {
 	}
 }
 
+void renderButton() {
+	glColor3f(0.0, 0.0, 0.0);
+	glPointSize(2);
+	glLineWidth(2);
+
+	for (int i = 0; i < MAX_BUTTON_COUNT; i++) {
+		glBegin(GL_LINE_LOOP);
+		glVertex2f(ptrButtons[i]->getShape().getVertex(0).x, ptrButtons[i]->getShape().getVertex(0).y);
+		glVertex2f(ptrButtons[i]->getShape().getVertex(1).x, ptrButtons[i]->getShape().getVertex(1).y);
+		glVertex2f(ptrButtons[i]->getShape().getVertex(2).x, ptrButtons[i]->getShape().getVertex(2).y);
+		glVertex2f(ptrButtons[i]->getShape().getVertex(3).x, ptrButtons[i]->getShape().getVertex(3).y);
+		glEnd();
+
+		std::vector<Vertex2F> iconVertices = ptrButtons[i]->getIcon().getShape().getAllVertices();
+		if (ptrButtons[i]->getIcon().getShape().getShapeType() == S_POINT) {
+			glBegin(GL_POINTS);
+			glVertex2f(iconVertices[0].x, iconVertices[0].y);
+			glEnd();
+		}
+		else {
+			if (ptrButtons[i]->getIcon().getShape().getIsFilled()) {
+				glBegin(GL_POLYGON);
+				for (int j = 0; j < iconVertices.size(); j++) {
+					glVertex2f(iconVertices[j].x, iconVertices[j].y);
+				}
+				glEnd();
+			}
+			else {
+				glBegin(GL_LINE_LOOP);
+				for (int j = 0; j < iconVertices.size(); j++) {
+					glVertex2f(iconVertices[j].x, iconVertices[j].y);
+				}
+				glEnd();
+			}
+		}
+	}
+}
 
 void renderScene() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -162,6 +154,34 @@ void renderScene() {
 	renderButton();
 
 	glFlush();
+}
+
+void reshapeScene(int width, int height) {
+	if (height == 0) {
+		height = 1;
+	}
+
+	float ratio = 1.0 * width / height;
+	windowWidth = width;
+	windowHeight = height;
+	
+	disposeUIButton();
+	initUIButton();
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glViewport(0, 0, width, height);
+	gluOrtho2D(0, width, 0, height);
+	glMatrixMode(GL_MODELVIEW);
+
+}
+
+void init(void) {
+	glClearColor(0.8, 0.8, 0.8, 0.0);
+	glColor3f(1.0f, 1.0f, 1.0f);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluOrtho2D(0, windowWidth, 0, windowHeight);
 }
 
 int main(int argc, char** argv) {
@@ -175,6 +195,7 @@ int main(int argc, char** argv) {
 	init();
 
 	glutDisplayFunc(renderScene);
+	glutReshapeFunc(reshapeScene);
 
 	glutMainLoop();
 
