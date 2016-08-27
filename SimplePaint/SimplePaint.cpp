@@ -276,16 +276,16 @@ void handleContinueDraw(float x, float y) {
 	}
 	else {
 		if (y > mouseDownPoint.y) {
-			outline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
 			outline.addVertex(mouseDownPoint.x, y);
-			outline.addVertex(x, y);
+			outline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
 			outline.addVertex(x, mouseDownPoint.y);
+			outline.addVertex(x, y);
 		}
 		else {
-			outline.addVertex(mouseDownPoint.x, y);
 			outline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
-			outline.addVertex(x, mouseDownPoint.y);
+			outline.addVertex(mouseDownPoint.x, y);
 			outline.addVertex(x, y);
+			outline.addVertex(x, mouseDownPoint.y);
 		}
 	}
 
@@ -345,12 +345,23 @@ bool isActiveFrameClicked(float x, float y) {
 	}
 
 	if (drawingFrame->getActive()) {
+		std::cout << "Active clicked" << std::endl;
 		Vertex2F topLeftVertex = drawingFrame->getOutline().getVertex(3);
 		Vertex2F bottomRightVertex = drawingFrame->getOutline().getVertex(1);
 
-		if ((x > topLeftVertex.x && x < bottomRightVertex.x) &&
-			(y > bottomRightVertex.y && y < topLeftVertex.y)) {
-			return true;
+		//if ((x > topLeftVertex.x && x < bottomRightVertex.x) &&
+		//	(y > bottomRightVertex.y && y < topLeftVertex.y)) {
+		//	std::cout << "Within active" << std::endl;
+		//	return true;
+		//}
+
+		if ((x > topLeftVertex.x && x < bottomRightVertex.x)) {
+			std::cout << "Within active x" << std::endl;
+
+			if (y > bottomRightVertex.y && y < topLeftVertex.y) {
+				std::cout << "Within active y" << std::endl;
+				return true;
+			}
 		}
 	}
 
@@ -358,10 +369,10 @@ bool isActiveFrameClicked(float x, float y) {
 }
 
 void mouseDrag(int x, int y) {
-	handleDragDrawingFrame(x, windowHeight - y);
-
 	mouseDragPoint.x = x;
 	mouseDragPoint.y = windowHeight - y;
+
+	handleDragDrawingFrame(x, windowHeight - y);
 
 	if (drawStart) {
 		handleContinueDraw(x, windowHeight - y);
