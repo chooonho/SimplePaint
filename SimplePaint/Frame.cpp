@@ -9,24 +9,8 @@ Shape Frame::getShapeDrawn() {
 	return mShapeDrawn;
 }
 
-float Frame::getHeight() {
-	return mHeight;
-}
-
-float Frame::getWidth() {
-	return mWidth;
-}
-
 bool Frame::getActive() {
 	return mActive;
-}
-
-void Frame::setHeight(float height) {
-	mHeight = height;
-}
-
-void Frame::setWidth(float width) {
-	mWidth = width;
 }
 
 void Frame::setShapeDrawn(Shape shapeDrawn) {

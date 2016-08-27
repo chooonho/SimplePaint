@@ -7,14 +7,10 @@
 
 class Frame {
 	public:
-		Frame() { mActive = true; mHeight = 0; mWidth = 0; }
+		Frame() { mActive = true; }
 		Shape getOutline();
 		Shape getShapeDrawn();
-		float getHeight();
-		float getWidth();
 		bool getActive();
-		void setHeight(float);
-		void setWidth(float);
 		void setShapeDrawn(Shape);
 		void setOutline(Shape);
 		void setActive(bool);
@@ -22,8 +18,6 @@ class Frame {
 		void clearShapeDrawn();
 	private:
 		bool mActive;
-		float mHeight;
-		float mWidth;
 		Shape mOutline;
 		Shape mShapeDrawn;
 };
