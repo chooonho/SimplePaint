@@ -11,6 +11,8 @@
 #include "Button.h"
 #include "Frame.h"
 
+const int UI_TOOLBAR_HEIGHT = BUTTON_HEIGHT + (BUTTON_PADDING_OUTER * 2);
+
 int windowWidth = 640;
 int windowHeight = 480;
 bool drawStart = false;
@@ -234,6 +236,14 @@ void draw() {
 			glDisable(GL_LINE_STIPPLE);
 		}
 	}
+
+	glColor3f(0.8f, 0.8f, 0.8f);
+	glBegin(GL_POLYGON);
+		glVertex2f(windowWidth, windowHeight);
+		glVertex2f(windowWidth, windowHeight - UI_TOOLBAR_HEIGHT);
+		glVertex2f(0, windowHeight - UI_TOOLBAR_HEIGHT);
+		glVertex2f(0, windowHeight);
+	glEnd();
 }
 
 void handleStartDraw(float x, float y) {
@@ -284,22 +294,21 @@ void handleContinueDraw(float x, float y) {
 	Shape outline;
 	Shape shapeDrawn;
 
-	if (shapeTypeSelected == S_POINT) {
-		outline.setShapeType(S_POINT);
+	outline.setShapeType(drawingFrame->getOutline().getShapeType());
+	shapeDrawn.setShapeType(drawingFrame->getShapeDrawn().getShapeType());
+
+	if (outline.getShapeType() == S_POINT) {
 		outline.addVertex(x, y);
 
-		shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices());
+		shapeDrawn = initShape(shapeDrawn.getShapeType(), outline.getAllVertices());
 	}
-	else if (shapeTypeSelected == LINE) {
-		outline.setShapeType(LINE);
+	else if (outline.getShapeType() == LINE) {
 		outline.addVertex(mouseDownPoint);
 		outline.addVertex(x, y);
 
-		shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices());
+		shapeDrawn = initShape(shapeDrawn.getShapeType(), outline.getAllVertices());
 	}
 	else {
-		outline.setShapeType(RECTANGLE);
-
 		if (x > mouseDownPoint.x) {
 			if (y > mouseDownPoint.y) {
 				outline.addVertex(x, y);
@@ -307,7 +316,7 @@ void handleContinueDraw(float x, float y) {
 				outline.addVertex(mouseDownPoint);
 				outline.addVertex(mouseDownPoint.x, y);
 
-				shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices());
+				shapeDrawn = initShape(shapeDrawn.getShapeType(), outline.getAllVertices());
 			}
 			else {
 				outline.addVertex(x, mouseDownPoint.y);
@@ -315,7 +324,7 @@ void handleContinueDraw(float x, float y) {
 				outline.addVertex(mouseDownPoint.x, y);
 				outline.addVertex(mouseDownPoint);
 
-				shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices());
+				shapeDrawn = initShape(shapeDrawn.getShapeType(), outline.getAllVertices());
 			}
 		}
 		else {
@@ -325,7 +334,7 @@ void handleContinueDraw(float x, float y) {
 				outline.addVertex(x, mouseDownPoint.y);
 				outline.addVertex(x, y);
 
-				shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices());
+				shapeDrawn = initShape(shapeDrawn.getShapeType(), outline.getAllVertices());
 			}
 			else {
 				outline.addVertex(mouseDownPoint);
@@ -333,7 +342,7 @@ void handleContinueDraw(float x, float y) {
 				outline.addVertex(x, y);
 				outline.addVertex(x, mouseDownPoint.y);
 
-				shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices());
+				shapeDrawn = initShape(shapeDrawn.getShapeType(), outline.getAllVertices());
 			}
 		}
 	}
@@ -352,7 +361,7 @@ void handleCompleteDraw(float x, float y) {
 	drawStart = false;
 
 	if (x == mouseDownPoint.x && y == mouseDownPoint.y) {
-		if (shapeTypeSelected != S_POINT) {
+		if (drawingFrame->getShapeDrawn().getShapeType() != S_POINT) {
 			delete drawingFrame;
 			drawingFrame = NULL;
 
@@ -376,16 +385,15 @@ void handleDragDrawingFrame(float x, float y) {
 		mouseDownPoint.y = y;
 
 		Shape outline;
-		if (shapeTypeSelected == LINE) {
-			outline.setShapeType(LINE);
+		outline.setShapeType(drawingFrame->getOutline().getShapeType());
+
+		if (outline.getShapeType() == LINE) {
 			outline.addVertex(drawingFrame->getOutline().getVertex(0).x + offsetX,
 								drawingFrame->getOutline().getVertex(0).y + offsetY);
 			outline.addVertex(drawingFrame->getOutline().getVertex(1).x + offsetX,
 								drawingFrame->getOutline().getVertex(1).y + offsetY);
 		}
 		else {
-			outline.setShapeType(RECTANGLE);
-
 			outline.addVertex(drawingFrame->getOutline().getVertex(0).x + offsetX,
 								drawingFrame->getOutline().getVertex(0).y + offsetY);
 			outline.addVertex(drawingFrame->getOutline().getVertex(1).x + offsetX,
@@ -396,7 +404,7 @@ void handleDragDrawingFrame(float x, float y) {
 								drawingFrame->getOutline().getVertex(3).y + offsetY);
 		}
 
-		Shape shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices());
+		Shape shapeDrawn = initShape(drawingFrame->getShapeDrawn().getShapeType(), outline.getAllVertices());
 
 		drawingFrame->setOutline(outline);
 		drawingFrame->setShapeDrawn(shapeDrawn);
@@ -474,8 +482,17 @@ void mouseClick(int button, int state, int x, int y) {
 			mouseDownPoint.x = x;
 			mouseDownPoint.y = windowHeight - y;
 
-			if (!(activeFrameClicked = isActiveFrameClicked(x, windowHeight - y))) {
+			if (windowHeight - y > windowHeight - UI_TOOLBAR_HEIGHT) {
 				activeFrameClicked = false;
+
+				if (drawingFrame != NULL) {
+					drawingFrame->setActive(false);
+				}
+
+				return;
+			}
+
+			if (!(activeFrameClicked = isActiveFrameClicked(x, windowHeight - y))) {
 				handleStartDraw(x, windowHeight - y);
 			}
 		}
@@ -492,10 +509,10 @@ void mouseClick(int button, int state, int x, int y) {
 void renderScene() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	draw();
+
 	setUIButtonClicked();
 	renderUIButton();
-
-	draw();
 
 	glutSwapBuffers();
 }
