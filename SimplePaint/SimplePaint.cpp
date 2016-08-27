@@ -5,6 +5,7 @@
 *	Objecttive			: Develop a simple 2D Paint program
 *******************************************************************************/
 
+#include <cstdlib>
 #include <GL/glut.h>
 #include <vector>
 #include <iostream>
@@ -12,11 +13,16 @@
 #include "Frame.h"
 
 const int UI_TOOLBAR_HEIGHT = BUTTON_HEIGHT + (BUTTON_PADDING_OUTER * 2);
+const int DEFAULT_POINT_SIZE = 1;
+const int DEFAULT_LINE_WIDTH = 1;
 
+int windowId;
 int windowWidth = 640;
 int windowHeight = 480;
 bool drawStart = false;
 bool activeFrameClicked = false;
+float pointSize = DEFAULT_POINT_SIZE;
+float lineWidth = DEFAULT_LINE_WIDTH;
 Frame* drawingFrame = NULL;
 ShapeType shapeTypeSelected = NONE;
 Vertex2F mouseDownPoint;
@@ -25,9 +31,25 @@ Vertex2F mouseUpPoint;
 std::vector<Button*> ptrUIButtons;
 std::vector<Frame*> drawingFrames;
 
-Shape initShape(ShapeType shapeType, std::vector<Vertex2F> outlineVertices) {
+enum MenuEvent {
+	CLEAR,
+	EXIT
+};
+
+enum MarkerSize {
+	M_SIZE_1,
+	M_SIZE_2,
+	M_SIZE_3,
+	M_SIZE_4,
+	M_SIZE_5,
+	M_SIZE_6,
+	M_SIZE_7
+};
+
+Shape initShape(ShapeType shapeType, std::vector<Vertex2F> outlineVertices, float size) {
 	Shape shape;
 	shape.setShapeType(shapeType);
+	shape.setSize(size);
 
 	if (shapeType != S_POINT && shapeType != LINE) {
 		float halfHeight = (outlineVertices[3].y - outlineVertices[1].y) / 2;
@@ -115,10 +137,12 @@ Icon makeIcon(ShapeType iconShapeType, std::vector<Vertex2F> buttonVertices) {
 		buttonVertices.push_back(vertexEnd);
 	}
 
+	float size = (iconShapeType == S_POINT) ? DEFAULT_POINT_SIZE : DEFAULT_LINE_WIDTH;
+
 	Icon icon;
 	icon.setHeight(iconHeight);
 	icon.setWidth(iconWidth);
-	icon.setShape(initShape(iconShapeType, buttonVertices));
+	icon.setShape(initShape(iconShapeType, buttonVertices, size));
 
 	return icon;
 }
@@ -157,13 +181,16 @@ void disposeUIButton() {
 void disposeDrawingFrames() {
 	while (!drawingFrames.empty()) {
 		delete drawingFrames.back();
+		drawingFrames.back() = NULL;
 		drawingFrames.pop_back();
 	}
+
+	drawingFrame = NULL;
 }
 
 void renderUIButton() {
-	glPointSize(2);
-	glLineWidth(2);
+	glPointSize(DEFAULT_POINT_SIZE + 1);
+	glLineWidth(DEFAULT_LINE_WIDTH + 1);
 
 	for (int i = 0; i < MAX_BUTTON_COUNT; i++) {
 		std::vector<Vertex2F> buttonVertices = ptrUIButtons[i]->getShape().getAllVertices();
@@ -228,7 +255,8 @@ void draw() {
 		std::vector<Vertex2F> shapeDrawnVertices = shapeDrawn.getAllVertices();
 
 		glColor3f(0.0f, 0.0f, 0.0f);
-		glLineWidth(2);
+		glPointSize(shapeDrawn.getSize());
+		glLineWidth(shapeDrawn.getSize());
 		if (shapeDrawn.getShapeType() == S_POINT) {
 			glBegin(GL_POINTS);
 		}
@@ -252,7 +280,7 @@ void draw() {
 			std::vector<Vertex2F> outlineVertices = drawingFrames[i]->getOutline().getAllVertices();
 
 			glColor3f(0.0f, 0.25f, 1.0f);
-			glLineWidth(1);
+			glLineWidth(DEFAULT_LINE_WIDTH);
 			glEnable(GL_LINE_STIPPLE);
 			glLineStipple(1, 0xF0F0);
 			glBegin(GL_LINE_LOOP);
@@ -301,7 +329,8 @@ void handleStartDraw(float x, float y) {
 		outline.addVertex(x, y);
 	}
 
-	Shape shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices());
+	float size = (shapeTypeSelected == S_POINT) ? pointSize : lineWidth;
+	Shape shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices(), size);
 
 	drawingFrame = new Frame();
 	drawingFrame->setOutline(outline);
@@ -319,21 +348,14 @@ void handleContinueDraw(float x, float y) {
 	}
 
 	Shape outline;
-	Shape shapeDrawn;
-
 	outline.setShapeType(drawingFrame->getOutline().getShapeType());
-	shapeDrawn.setShapeType(drawingFrame->getShapeDrawn().getShapeType());
 
 	if (outline.getShapeType() == S_POINT) {
 		outline.addVertex(x, y);
-
-		shapeDrawn = initShape(shapeDrawn.getShapeType(), outline.getAllVertices());
 	}
 	else if (outline.getShapeType() == LINE) {
 		outline.addVertex(mouseDownPoint);
 		outline.addVertex(x, y);
-
-		shapeDrawn = initShape(shapeDrawn.getShapeType(), outline.getAllVertices());
 	}
 	else {
 		if (x > mouseDownPoint.x) {
@@ -342,16 +364,12 @@ void handleContinueDraw(float x, float y) {
 				outline.addVertex(x, mouseDownPoint.y);
 				outline.addVertex(mouseDownPoint);
 				outline.addVertex(mouseDownPoint.x, y);
-
-				shapeDrawn = initShape(shapeDrawn.getShapeType(), outline.getAllVertices());
 			}
 			else {
 				outline.addVertex(x, mouseDownPoint.y);
 				outline.addVertex(x, y);
 				outline.addVertex(mouseDownPoint.x, y);
 				outline.addVertex(mouseDownPoint);
-
-				shapeDrawn = initShape(shapeDrawn.getShapeType(), outline.getAllVertices());
 			}
 		}
 		else {
@@ -360,19 +378,18 @@ void handleContinueDraw(float x, float y) {
 				outline.addVertex(mouseDownPoint);
 				outline.addVertex(x, mouseDownPoint.y);
 				outline.addVertex(x, y);
-
-				shapeDrawn = initShape(shapeDrawn.getShapeType(), outline.getAllVertices());
 			}
 			else {
 				outline.addVertex(mouseDownPoint);
 				outline.addVertex(mouseDownPoint.x, y);
 				outline.addVertex(x, y);
 				outline.addVertex(x, mouseDownPoint.y);
-
-				shapeDrawn = initShape(shapeDrawn.getShapeType(), outline.getAllVertices());
 			}
 		}
 	}
+
+	Shape shapeDrawn = initShape(drawingFrame->getShapeDrawn().getShapeType(), outline.getAllVertices(),
+									drawingFrame->getShapeDrawn().getSize());
 
 	drawingFrame->setOutline(outline);
 	drawingFrame->setShapeDrawn(shapeDrawn);
@@ -428,7 +445,8 @@ void handleDragDrawingFrame(float x, float y) {
 								drawingFrame->getOutline().getVertex(3).y + offsetY);
 		}
 
-		Shape shapeDrawn = initShape(drawingFrame->getShapeDrawn().getShapeType(), outline.getAllVertices());
+		float size = (drawingFrame->getShapeDrawn().getShapeType() == S_POINT) ? pointSize : lineWidth;
+		Shape shapeDrawn = initShape(drawingFrame->getShapeDrawn().getShapeType(), outline.getAllVertices(), size);
 
 		drawingFrame->setOutline(outline);
 		drawingFrame->setShapeDrawn(shapeDrawn);
@@ -530,6 +548,8 @@ void mouseClick(int button, int state, int x, int y) {
 
 			handleCompleteDraw(x, windowHeight - y);
 		}
+
+		return;
 	}
 }
 
@@ -561,7 +581,114 @@ void reshapeScene(int width, int height) {
 	glViewport(0, 0, width, height);
 	gluOrtho2D(0, width, 0, height);
 	glMatrixMode(GL_MODELVIEW);
+}
 
+void processMenuEvents(int option) {
+	switch (option) {
+		case CLEAR:
+			disposeDrawingFrames();
+			glutPostRedisplay();
+			break;
+		case EXIT:
+			glutDestroyWindow(windowId);
+			exit(0);
+			break;
+	}
+}
+
+void processColorMenuEvents(int option) {
+
+}
+
+void processPointSizeMenuEvents(int option) {
+	switch (option) {
+		case M_SIZE_1:
+			pointSize = 1.0f;
+			break;
+		case M_SIZE_2:
+			pointSize = 2.0f;
+			break;
+		case M_SIZE_3:
+			pointSize = 3.0f;
+			break;
+		case M_SIZE_4:
+			pointSize = 4.0f;
+			break;
+		case M_SIZE_5:
+			pointSize = 5.0f;
+			break;
+		case M_SIZE_6:
+			pointSize = 6.0f;
+			break;
+		case M_SIZE_7:
+			pointSize = 7.0f;
+			break;
+	}
+}
+
+void processLineWidthMenuEvents(int option) {
+	switch (option) {
+		case M_SIZE_1:
+			lineWidth = 1.0f;
+			break;
+		case M_SIZE_2:
+			lineWidth = 2.0f;
+			break;
+		case M_SIZE_3:
+			lineWidth = 3.0f;
+			break;
+		case M_SIZE_4:
+			lineWidth = 4.0f;
+			break;
+		case M_SIZE_5:
+			lineWidth = 5.0f;
+			break;
+		case M_SIZE_6:
+			lineWidth = 6.0f;
+			break;
+		case M_SIZE_7:
+			lineWidth = 7.0f;
+			break;
+	}
+}
+
+void createGLUTMenus() {
+	int colorMenu = glutCreateMenu(processColorMenuEvents);
+	glutAddMenuEntry("Black", 1);
+	glutAddMenuEntry("White", 2);
+	glutAddMenuEntry("Red", 3);
+	glutAddMenuEntry("Green", 4);
+	glutAddMenuEntry("Blue", 5);
+	glutAddMenuEntry("Yellow", 6);
+	glutAddMenuEntry("Orange", 7);
+	glutAddMenuEntry("Purple", 8);
+
+	int pointSizeMenu = glutCreateMenu(processPointSizeMenuEvents);
+	glutAddMenuEntry("1.0", M_SIZE_1);
+	glutAddMenuEntry("2.0", M_SIZE_2);
+	glutAddMenuEntry("3.0", M_SIZE_3);
+	glutAddMenuEntry("4.0", M_SIZE_4);
+	glutAddMenuEntry("5.0", M_SIZE_5);
+	glutAddMenuEntry("6.0", M_SIZE_6);
+	glutAddMenuEntry("7.0", M_SIZE_7);
+
+	int lineWidthMenu = glutCreateMenu(processLineWidthMenuEvents);
+	glutAddMenuEntry("1.0", M_SIZE_1);
+	glutAddMenuEntry("2.0", M_SIZE_2);
+	glutAddMenuEntry("3.0", M_SIZE_3);
+	glutAddMenuEntry("4.0", M_SIZE_4);
+	glutAddMenuEntry("5.0", M_SIZE_5);
+	glutAddMenuEntry("6.0", M_SIZE_6);
+	glutAddMenuEntry("7.0", M_SIZE_7);
+
+	int menu = glutCreateMenu(processMenuEvents);
+	glutAddSubMenu("Color", colorMenu);
+	glutAddSubMenu("Point Size", pointSizeMenu);
+	glutAddSubMenu("Line Width", lineWidthMenu);
+	glutAddMenuEntry("Clear", CLEAR);
+	glutAddMenuEntry("Exit", EXIT);
+
+	glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 
 void init(void) {
@@ -579,8 +706,9 @@ int main(int argc, char** argv) {
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
 	glutInitWindowPosition(100, 100);
 	glutInitWindowSize(windowWidth, windowHeight);
-	glutCreateWindow("CSCI336-Assignment1 Simple Paint");
+	windowId = glutCreateWindow("CSCI336-Assignment1 Simple Paint");
 	init();
+	createGLUTMenus();
 
 	glutDisplayFunc(renderScene);
 	glutReshapeFunc(reshapeScene);

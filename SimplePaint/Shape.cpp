@@ -15,6 +15,10 @@ bool Shape::getIsFilled() {
 	return mIsFilled;
 }
 
+float Shape::getSize() {
+	return mSize;
+}
+
 std::vector<Vertex2F> Shape::getAllVertices() {
 	return mVertices;
 }
@@ -51,8 +55,13 @@ void Shape::setShapeType(ShapeType shapeType) {
 	mShapeType = shapeType;
 }
 
+void Shape::setSize(float size) {
+	mSize = size;
+}
+
 void Shape::operator=(const Shape& rhShape) {
 	mVertices = rhShape.mVertices;
 	mIsFilled = rhShape.mIsFilled;
 	mShapeType = rhShape.mShapeType;
+	mSize = rhShape.mSize;
 }

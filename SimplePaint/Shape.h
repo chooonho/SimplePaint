@@ -25,6 +25,7 @@ class Shape {
 		Shape(std::vector<Vertex2F>, bool, ShapeType);
 		Vertex2F getVertex(int);
 		bool getIsFilled();
+		float getSize();
 		ShapeType getShapeType();
 		std::vector<Vertex2F> getAllVertices();
 		void addVertex(Vertex2F);
@@ -32,11 +33,13 @@ class Shape {
 		void clearAllVertices();
 		void setVertices(std::vector<Vertex2F>);
 		void setIsFilled(bool);
+		void setSize(float);
 		void setShapeType(ShapeType);
 		void operator=(const Shape&);
 	private:
 		std::vector<Vertex2F> mVertices;
 		bool mIsFilled;
+		float mSize;
 		ShapeType mShapeType;
 };
 
