@@ -39,3 +39,5 @@ class Shape {
 		bool mIsFilled;
 		ShapeType mShapeType;
 };
+
+const double MATH_PI = 3.141592;

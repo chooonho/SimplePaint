@@ -17,13 +17,10 @@ class Button {
 		Icon getIcon();
 		float getHeight();
 		float getWidth();
-		Vertex2F getCenterPoint();
 		void setShape(Shape);
 		void setIcon(Icon);
 		void setHeight(float);
 		void setWidth(float);
-		void setCenterPoint(Vertex2F);
-		void setCenterPoint(float, float);
 		void addShapeVertex(Vertex2F);
 		void addShapeVertex(float, float);
 		void addShapeType(ShapeType);
@@ -32,5 +29,11 @@ class Button {
 		Icon mIcon;
 		float mHeight;
 		float mWidth;
-		Vertex2F mCenterPoint;
 };
+
+const int MAX_BUTTON_COUNT = 8;
+const float BUTTON_HEIGHT = 70.0;
+const float BUTTON_WIDTH = 70.0;
+const float BUTTON_PADDING_OUTER = 5.0;
+const float BUTTON_PADDING_INNER = 10.0;
+const ShapeType SHAPE_TYPES[MAX_BUTTON_COUNT] = { S_POINT, LINE, TRIANGLE, TRIANGLE_F, RECTANGLE, RECTANGLE_F, OVAL, OVAL_F };

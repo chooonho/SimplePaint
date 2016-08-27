@@ -11,8 +11,6 @@
 #include "Button.h"
 #include "Frame.h"
 
-const int MAX_BUTTON_COUNT = 8;
-
 int windowWidth = 640;
 int windowHeight = 480;
 bool drawStart = false;
@@ -26,8 +24,6 @@ std::vector<Button*> ptrUIButtons;
 std::vector<Frame*> drawingFrames;
 
 Shape initShape(ShapeType shapeType, std::vector<Vertex2F> outlineVertices, int mouseDownVPos = 0) {
-	const double MATH_PI = 3.141592;
-
 	int mouseUpVPos = (mouseDownVPos + 2) % 4;
 	float halfHeight = (outlineVertices[3].y - outlineVertices[1].y) / 2;
 	float halfWidth = (outlineVertices[1].x - outlineVertices[3].x) / 2;
@@ -75,6 +71,15 @@ Shape initShape(ShapeType shapeType, std::vector<Vertex2F> outlineVertices, int 
 }
 
 Icon makeIcon(ShapeType iconShapeType, std::vector<Vertex2F> buttonVertices) {
+	buttonVertices[0].x = buttonVertices[0].x - BUTTON_PADDING_INNER;
+	buttonVertices[0].y = buttonVertices[0].y - BUTTON_PADDING_INNER;
+	buttonVertices[1].x = buttonVertices[1].x - BUTTON_PADDING_INNER;
+	buttonVertices[1].y = buttonVertices[1].y + BUTTON_PADDING_INNER;
+	buttonVertices[2].x = buttonVertices[2].x + BUTTON_PADDING_INNER;
+	buttonVertices[2].y = buttonVertices[2].y + BUTTON_PADDING_INNER;
+	buttonVertices[3].x = buttonVertices[3].x + BUTTON_PADDING_INNER;
+	buttonVertices[3].y = buttonVertices[3].y - BUTTON_PADDING_INNER;
+
 	Shape shape = initShape(iconShapeType, buttonVertices);
 
 	Icon icon;
@@ -86,17 +91,12 @@ Icon makeIcon(ShapeType iconShapeType, std::vector<Vertex2F> buttonVertices) {
 }
 
 void initUIButton() {
-	const float BUTTON_HEIGHT = 70.0;
-	const float BUTTON_WIDTH = 70.0;
-	const float BUTTON_PADDING = 5.0;
-	const ShapeType SHAPE_TYPES[MAX_BUTTON_COUNT] = { S_POINT, LINE, TRIANGLE, TRIANGLE_F, RECTANGLE, RECTANGLE_F, OVAL, OVAL_F };
-
 	Vertex2F vertex;
 	vertex.x = 0.0f;
-	vertex.y = windowHeight - BUTTON_PADDING;
+	vertex.y = windowHeight - BUTTON_PADDING_OUTER;
 
 	for (int i = 0; i < MAX_BUTTON_COUNT; i++) {
-		vertex.x += BUTTON_PADDING;
+		vertex.x += BUTTON_PADDING_OUTER;
 
 		Button* ptrUIButton = new Button();
 		ptrUIButton->setWidth(BUTTON_WIDTH);
