@@ -188,45 +188,91 @@ void setUIButtonClicked() {
 
 void draw() {
 	for (int i = 0; i < drawingFrames.size(); i++) {
-		std::vector<Vertex2F> frameOutlineVertices = drawingFrames[i]->getOutline().getAllVertices();
+		Shape shapeDrawn = drawingFrames[i]->getShapeDrawn();
+		std::vector<Vertex2F> shapeDrawnVertices = shapeDrawn.getAllVertices();
 
-		glEnable(GL_LINE_STIPPLE);
-		glLineStipple(1, 0xF0F0);
-		glBegin(GL_LINE_LOOP);
+		glColor3f(0.0f, 0.0f, 0.0f);
+		glLineWidth(2);
+		if (shapeDrawn.getShapeType() == S_POINT) {
+			glBegin(GL_POINTS);
+		}
+		else {
+			if (shapeDrawn.getIsFilled()) {
+				glBegin(GL_POLYGON);
+			}
+			else {
+				glBegin(GL_LINE_LOOP);
+			}
+		}
+		for (int i = 0; i < shapeDrawnVertices.size(); i++) {
+			glVertex2f(shapeDrawnVertices[i].x, shapeDrawnVertices[i].y);
+		}
+		glEnd();
+
+		if (drawingFrames[i]->getActive()) {
+			std::vector<Vertex2F> frameOutlineVertices = drawingFrames[i]->getOutline().getAllVertices();
+
+			glColor3f(0.0f, 0.25f, 1.0f);
+			glLineWidth(1);
+			glEnable(GL_LINE_STIPPLE);
+			glLineStipple(1, 0xF0F0);
+			glBegin(GL_LINE_LOOP);
 			for (int j = 0; j < frameOutlineVertices.size(); j++) {
 				glVertex2f(frameOutlineVertices[j].x, frameOutlineVertices[j].y);
 			}
-		glEnd();
-		glDisable(GL_LINE_STIPPLE);
+			glEnd();
+			glDisable(GL_LINE_STIPPLE);
+		}
+	}
+}
+
+Shape initShape(ShapeType shapeType, std::vector<Vertex2F> outlineVertices, int mouseDownVPos = 0) {
+	const double MATH_PI = 3.141592;
+
+	int mouseUpVPos = (mouseDownVPos + 2) % 4;
+	float halfHeight = (outlineVertices[3].y - outlineVertices[1].y) / 2;
+	float halfWidth = (outlineVertices[1].x - outlineVertices[3].x) / 2;
+
+	Vertex2F centerPoint;
+	centerPoint.x = outlineVertices[3].x + halfWidth;
+	centerPoint.y = outlineVertices[1].y + halfHeight;
+
+	Shape shape;
+	shape.setShapeType(shapeType);
+
+	switch (shapeType) {
+		case S_POINT:
+			shape.addVertex(centerPoint);
+			break;
+		case LINE:
+			shape.addVertex(outlineVertices[mouseDownVPos]);
+			shape.addVertex(outlineVertices[mouseUpVPos]);
+			break;
+		case TRIANGLE_F:
+			shape.setIsFilled(true);
+		case TRIANGLE:
+			shape.addVertex((centerPoint.x), (centerPoint.y + halfHeight));
+			shape.addVertex(outlineVertices[1]);
+			shape.addVertex(outlineVertices[2]);
+			break;
+		case RECTANGLE_F:
+			shape.setIsFilled(true);
+		case RECTANGLE:
+			for (int i = 0; i < outlineVertices.size(); i++) {
+				shape.addVertex(outlineVertices[i]);
+			}
+			break;
+		case OVAL_F:
+			shape.setIsFilled(true);
+		case OVAL:
+			for (int i = 0; i < 360; i++) {
+				float angle = i * MATH_PI / 180;
+				shape.addVertex((centerPoint.x + (cos(angle) * halfWidth)), (centerPoint.y + (sin(angle) * halfHeight)));
+			}
+		break;
 	}
 
-	//shapeDrawnVertices.clear();
-	//shapeDrawnVertices = shapeDrawn->getAllVertices();
-	//if (shapeDrawnVertices.size() == 0) {
-	//	return;
-	//}
-
-	//if (shapeDrawn->getShapeType() == S_POINT) {
-	//	glBegin(GL_POINTS);
-	//		glVertex2f(shapeDrawnVertices[0].x, shapeDrawnVertices[0].y);
-	//	glEnd();
-	//}
-	//else {
-	//	if (shapeDrawn->getIsFilled()) {
-	//		glBegin(GL_POLYGON);
-	//			for (int j = 0; j < shapeDrawnVertices.size(); j++) {
-	//				glVertex2f(shapeDrawnVertices[j].x, shapeDrawnVertices[j].y);
-	//			}
-	//		glEnd();
-	//	}
-	//	else {
-	//		glBegin(GL_LINE_LOOP);
-	//			for (int j = 0; j < shapeDrawnVertices.size(); j++) {
-	//				glVertex2f(shapeDrawnVertices[j].x, shapeDrawnVertices[j].y);
-	//			}
-	//		glEnd();
-	//	}
-	//}
+	return shape;
 }
 
 void handleStartDraw(float x, float y) {
@@ -246,9 +292,11 @@ void handleStartDraw(float x, float y) {
 	outline.addVertex(x, y);
 	outline.addVertex(x, y);
 
+	Shape shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices());
+
 	drawingFrame = new Frame();
 	drawingFrame->setOutline(outline);
-
+	drawingFrame->setShapeDrawn(shapeDrawn);
 	drawingFrames.push_back(drawingFrame);
 }
 
@@ -260,18 +308,24 @@ void handleContinueDraw(float x, float y) {
 	Shape outline;
 	outline.setShapeType(RECTANGLE);
 
+	Shape shapeDrawn;
+
 	if (x > mouseDownPoint.x) {
 		if (y > mouseDownPoint.y) {
 			outline.addVertex(x, y);
 			outline.addVertex(x, mouseDownPoint.y);
 			outline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
 			outline.addVertex(mouseDownPoint.x, y);
+
+			shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices(), 2);
 		}
 		else {
 			outline.addVertex(x, mouseDownPoint.y);
 			outline.addVertex(x, y);
 			outline.addVertex(mouseDownPoint.x, y);
 			outline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
+
+			shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices(), 3);
 		}
 	}
 	else {
@@ -280,16 +334,21 @@ void handleContinueDraw(float x, float y) {
 			outline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
 			outline.addVertex(x, mouseDownPoint.y);
 			outline.addVertex(x, y);
+
+			shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices(), 1);
 		}
 		else {
 			outline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
 			outline.addVertex(mouseDownPoint.x, y);
 			outline.addVertex(x, y);
 			outline.addVertex(x, mouseDownPoint.y);
+
+			shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices(), 0);
 		}
 	}
 
 	drawingFrame->setOutline(outline);
+	drawingFrame->setShapeDrawn(shapeDrawn);
 
 	glutPostRedisplay();
 }
@@ -333,7 +392,11 @@ void handleDragDrawingFrame(float x, float y) {
 										drawingFrame->getOutline().getVertex(2).y + offsetY);
 		outline.addVertex(drawingFrame->getOutline().getVertex(3).x + offsetX,
 										drawingFrame->getOutline().getVertex(3).y + offsetY);
+
+		Shape shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices());
+
 		drawingFrame->setOutline(outline);
+		drawingFrame->setShapeDrawn(shapeDrawn);
 
 		glutPostRedisplay();
 	}
@@ -345,23 +408,12 @@ bool isActiveFrameClicked(float x, float y) {
 	}
 
 	if (drawingFrame->getActive()) {
-		std::cout << "Active clicked" << std::endl;
 		Vertex2F topLeftVertex = drawingFrame->getOutline().getVertex(3);
 		Vertex2F bottomRightVertex = drawingFrame->getOutline().getVertex(1);
 
-		//if ((x > topLeftVertex.x && x < bottomRightVertex.x) &&
-		//	(y > bottomRightVertex.y && y < topLeftVertex.y)) {
-		//	std::cout << "Within active" << std::endl;
-		//	return true;
-		//}
-
-		if ((x > topLeftVertex.x && x < bottomRightVertex.x)) {
-			std::cout << "Within active x" << std::endl;
-
-			if (y > bottomRightVertex.y && y < topLeftVertex.y) {
-				std::cout << "Within active y" << std::endl;
-				return true;
-			}
+		if ((x > topLeftVertex.x && x < bottomRightVertex.x) &&
+			(y > bottomRightVertex.y && y < topLeftVertex.y)) {
+			return true;
 		}
 	}
 
