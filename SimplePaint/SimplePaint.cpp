@@ -149,22 +149,22 @@ void renderUIButton() {
 		glColor3f(0.0, 0.0, 0.0);
 		if (ptrUIButtons[i]->getIcon().getShape().getShapeType() == S_POINT) {
 			glBegin(GL_POINTS);
-			glVertex2f(iconVertices[0].x, iconVertices[0].y);
+				glVertex2f(iconVertices[0].x, iconVertices[0].y);
 			glEnd();
 		}
 		else {
 			if (ptrUIButtons[i]->getIcon().getShape().getIsFilled()) {
 				glBegin(GL_POLYGON);
-				for (int j = 0; j < iconVertices.size(); j++) {
-					glVertex2f(iconVertices[j].x, iconVertices[j].y);
-				}
+					for (int j = 0; j < iconVertices.size(); j++) {
+						glVertex2f(iconVertices[j].x, iconVertices[j].y);
+					}
 				glEnd();
 			}
 			else {
 				glBegin(GL_LINE_LOOP);
-				for (int j = 0; j < iconVertices.size(); j++) {
-					glVertex2f(iconVertices[j].x, iconVertices[j].y);
-				}
+					for (int j = 0; j < iconVertices.size(); j++) {
+						glVertex2f(iconVertices[j].x, iconVertices[j].y);
+					}
 				glEnd();
 			}
 		}
@@ -184,6 +184,10 @@ void renderUIButton() {
 }
 
 void setUIButtonClicked() {
+	if (mouseDownPoint.y < (windowHeight - UI_TOOLBAR_HEIGHT)) {
+		return;
+	}
+
 	for (int i = 0; i < MAX_BUTTON_COUNT; i++) {
 		Vertex2F topLeftPoint = ptrUIButtons[i]->getShape().getVertex(3);
 		Vertex2F bottomRightPoint = ptrUIButtons[i]->getShape().getVertex(1);
@@ -378,11 +382,8 @@ void handleDragDrawingFrame(float x, float y) {
 	}
 
 	if (activeFrameClicked) {
-		float offsetX = x - mouseDownPoint.x;
-		float offsetY = y - mouseDownPoint.y;
-
-		mouseDownPoint.x = x;
-		mouseDownPoint.y = y;
+		float offsetX = x - mouseDragPoint.x;
+		float offsetY = y - mouseDragPoint.y;
 
 		Shape outline;
 		outline.setShapeType(drawingFrame->getOutline().getShapeType());
@@ -466,14 +467,12 @@ bool isActiveFrameClicked(float x, float y) {
 }
 
 void mouseDrag(int x, int y) {
+	handleDragDrawingFrame(x, windowHeight - y);
+
 	mouseDragPoint.x = x;
 	mouseDragPoint.y = windowHeight - y;
 
-	handleDragDrawingFrame(x, windowHeight - y);
-
-	if (drawStart) {
-		handleContinueDraw(x, windowHeight - y);
-	}
+	handleContinueDraw(x, windowHeight - y);
 }
 
 void mouseClick(int button, int state, int x, int y) {
@@ -482,7 +481,7 @@ void mouseClick(int button, int state, int x, int y) {
 			mouseDownPoint.x = x;
 			mouseDownPoint.y = windowHeight - y;
 
-			if (windowHeight - y > windowHeight - UI_TOOLBAR_HEIGHT) {
+			if ((windowHeight - y) > (windowHeight - UI_TOOLBAR_HEIGHT)) {
 				activeFrameClicked = false;
 
 				if (drawingFrame != NULL) {
@@ -492,9 +491,14 @@ void mouseClick(int button, int state, int x, int y) {
 				return;
 			}
 
-			if (!(activeFrameClicked = isActiveFrameClicked(x, windowHeight - y))) {
-				handleStartDraw(x, windowHeight - y);
+			if (activeFrameClicked = isActiveFrameClicked(x, windowHeight - y)) {
+				mouseDragPoint.x = mouseDownPoint.x;
+				mouseDragPoint.y = mouseDownPoint.y;
+				
+				return;
 			}
+
+			handleStartDraw(x, windowHeight - y);
 		}
 
 		if (state == GLUT_UP) {
