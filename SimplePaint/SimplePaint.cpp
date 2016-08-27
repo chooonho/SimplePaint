@@ -440,7 +440,6 @@ bool isActiveFrameClicked(float x, float y) {
 			float slopeOriginal = (endVertex.y - startVertex.y) / (endVertex.x - startVertex.x);
 			float slopeNew = (endVertex.y - y) / (endVertex.x - x);
 			if (slopeNew > (slopeOriginal - 0.1) && slopeNew < (slopeOriginal + 0.1)) {
-				std::cout << "Got it" << std::endl;
 				return true;
 			}
 		}
