@@ -90,12 +90,35 @@ Icon makeIcon(ShapeType iconShapeType, std::vector<Vertex2F> buttonVertices) {
 	buttonVertices[3].x = buttonVertices[3].x + BUTTON_PADDING_INNER;
 	buttonVertices[3].y = buttonVertices[3].y - BUTTON_PADDING_INNER;
 
-	Shape shape = initShape(iconShapeType, buttonVertices);
+	float iconHeight = buttonVertices[3].y - buttonVertices[1].y;
+	float iconWidth = buttonVertices[1].x - buttonVertices[3].x;
+
+	if (iconShapeType == S_POINT) {
+		Vertex2F vertex;
+		vertex.x = buttonVertices[3].x + ((buttonVertices[1].x - buttonVertices[3].x) / 2);
+		vertex.y = buttonVertices[1].y + ((buttonVertices[3].y - buttonVertices[1].y) / 2);
+
+		buttonVertices.clear();
+		buttonVertices.push_back(vertex);
+	}
+	else if (iconShapeType == LINE) {
+		Vertex2F vertexStart;
+		Vertex2F vertexEnd;
+
+		vertexStart.x = buttonVertices[2].x;
+		vertexStart.y = buttonVertices[2].y;
+		vertexEnd.x = buttonVertices[0].x;
+		vertexEnd.y = buttonVertices[0].y;
+
+		buttonVertices.clear();
+		buttonVertices.push_back(vertexStart);
+		buttonVertices.push_back(vertexEnd);
+	}
 
 	Icon icon;
-	icon.setHeight(buttonVertices[3].y - buttonVertices[1].y);
-	icon.setWidth(buttonVertices[1].x - buttonVertices[3].x);
-	icon.setShape(shape);
+	icon.setHeight(iconHeight);
+	icon.setWidth(iconWidth);
+	icon.setShape(initShape(iconShapeType, buttonVertices));
 
 	return icon;
 }
@@ -189,11 +212,11 @@ void setUIButtonClicked() {
 	}
 
 	for (int i = 0; i < MAX_BUTTON_COUNT; i++) {
-		Vertex2F topLeftPoint = ptrUIButtons[i]->getShape().getVertex(3);
-		Vertex2F bottomRightPoint = ptrUIButtons[i]->getShape().getVertex(1);
+		Vertex2F vertexTopLeft = ptrUIButtons[i]->getShape().getVertex(3);
+		Vertex2F vertexBottomRight = ptrUIButtons[i]->getShape().getVertex(1);
 
-		if ((mouseUpPoint.x > topLeftPoint.x && mouseUpPoint.x < bottomRightPoint.x) &&
-			(mouseUpPoint.y > bottomRightPoint.y && mouseUpPoint.y < topLeftPoint.y)) {
+		if ((mouseUpPoint.x > vertexTopLeft.x && mouseUpPoint.x < vertexBottomRight.x) &&
+			(mouseUpPoint.y > vertexBottomRight.y && mouseUpPoint.y < vertexTopLeft.y)) {
 			shapeTypeSelected = ptrUIButtons[i]->getShape().getShapeType();
 		}
 	}
