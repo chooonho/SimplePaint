@@ -121,7 +121,7 @@ void disposeUIButton() {
 	}
 }
 
-void disposeDrawnShape() {
+void disposeDrawingFrames() {
 	while (!drawingFrames.empty()) {
 		delete drawingFrames.back();
 		drawingFrames.pop_back();
@@ -459,6 +459,7 @@ int main(int argc, char** argv) {
 	glutMainLoop();
 
 	disposeUIButton();
+	disposeDrawingFrames();
 
 	return 0;
 }
