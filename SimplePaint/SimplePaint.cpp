@@ -23,48 +23,56 @@ Vertex2F mouseUpPoint;
 std::vector<Button*> ptrUIButtons;
 std::vector<Frame*> drawingFrames;
 
-Shape initShape(ShapeType shapeType, std::vector<Vertex2F> outlineVertices, int mouseDownVPos = 0) {
-	int mouseUpVPos = (mouseDownVPos + 2) % 4;
-	float halfHeight = (outlineVertices[3].y - outlineVertices[1].y) / 2;
-	float halfWidth = (outlineVertices[1].x - outlineVertices[3].x) / 2;
-
-	Vertex2F centerPoint;
-	centerPoint.x = outlineVertices[3].x + halfWidth;
-	centerPoint.y = outlineVertices[1].y + halfHeight;
-
+Shape initShape(ShapeType shapeType, std::vector<Vertex2F> outlineVertices) {
 	Shape shape;
 	shape.setShapeType(shapeType);
 
-	switch (shapeType) {
-		case S_POINT:
-			shape.addVertex(centerPoint);
-			break;
-		case LINE:
-			shape.addVertex(outlineVertices[mouseDownVPos]);
-			shape.addVertex(outlineVertices[mouseUpVPos]);
-			break;
-		case TRIANGLE_F:
-			shape.setIsFilled(true);
-		case TRIANGLE:
-			shape.addVertex((centerPoint.x), (centerPoint.y + halfHeight));
-			shape.addVertex(outlineVertices[1]);
-			shape.addVertex(outlineVertices[2]);
-			break;
-		case RECTANGLE_F:
-			shape.setIsFilled(true);
-		case RECTANGLE:
-			for (int i = 0; i < outlineVertices.size(); i++) {
-				shape.addVertex(outlineVertices[i]);
-			}
-			break;
-		case OVAL_F:
-			shape.setIsFilled(true);
-		case OVAL:
-			for (int i = 0; i < 360; i++) {
-				float angle = i * MATH_PI / 180;
-				shape.addVertex((centerPoint.x + (cos(angle) * halfWidth)), (centerPoint.y + (sin(angle) * halfHeight)));
-			}
-		break;
+	if (shapeType != S_POINT && shapeType != LINE) {
+		float halfHeight = (outlineVertices[3].y - outlineVertices[1].y) / 2;
+		float halfWidth = (outlineVertices[1].x - outlineVertices[3].x) / 2;
+
+		Vertex2F centerPoint;
+		centerPoint.x = outlineVertices[3].x + halfWidth;
+		centerPoint.y = outlineVertices[1].y + halfHeight;
+
+		switch (shapeType) {
+			case TRIANGLE_F:
+				shape.setIsFilled(true);
+			case TRIANGLE:
+				shape.addVertex((centerPoint.x), (centerPoint.y + halfHeight));
+				shape.addVertex(outlineVertices[1]);
+				shape.addVertex(outlineVertices[2]);
+				break;
+
+			case RECTANGLE_F:
+				shape.setIsFilled(true);
+			case RECTANGLE:
+				for (int i = 0; i < outlineVertices.size(); i++) {
+					shape.addVertex(outlineVertices[i]);
+				}
+				break;
+
+			case OVAL_F:
+				shape.setIsFilled(true);
+			case OVAL:
+				for (int i = 0; i < 360; i++) {
+					float angle = i * MATH_PI / 180;
+					shape.addVertex((centerPoint.x + (cos(angle) * halfWidth)), (centerPoint.y + (sin(angle) * halfHeight)));
+				}
+				break;
+		}
+	}
+	else {
+		switch (shapeType) {
+			case S_POINT:
+				shape.addVertex(outlineVertices[0]);
+				break;
+
+			case LINE:
+				shape.addVertex(outlineVertices[0]);
+				shape.addVertex(outlineVertices[1]);
+				break;
+		}
 	}
 
 	return shape;
@@ -195,6 +203,9 @@ void draw() {
 		if (shapeDrawn.getShapeType() == S_POINT) {
 			glBegin(GL_POINTS);
 		}
+		else if (shapeDrawn.getShapeType() == LINE) {
+			glBegin(GL_LINES);
+		}
 		else {
 			if (shapeDrawn.getIsFilled()) {
 				glBegin(GL_POLYGON);
@@ -209,16 +220,16 @@ void draw() {
 		glEnd();
 
 		if (drawingFrames[i]->getActive()) {
-			std::vector<Vertex2F> frameOutlineVertices = drawingFrames[i]->getOutline().getAllVertices();
+			std::vector<Vertex2F> outlineVertices = drawingFrames[i]->getOutline().getAllVertices();
 
 			glColor3f(0.0f, 0.25f, 1.0f);
 			glLineWidth(1);
 			glEnable(GL_LINE_STIPPLE);
 			glLineStipple(1, 0xF0F0);
 			glBegin(GL_LINE_LOOP);
-			for (int j = 0; j < frameOutlineVertices.size(); j++) {
-				glVertex2f(frameOutlineVertices[j].x, frameOutlineVertices[j].y);
-			}
+				for (int j = 0; j < outlineVertices.size(); j++) {
+					glVertex2f(outlineVertices[j].x, outlineVertices[j].y);
+				}
 			glEnd();
 			glDisable(GL_LINE_STIPPLE);
 		}
@@ -236,17 +247,32 @@ void handleStartDraw(float x, float y) {
 	drawStart = true;
 
 	Shape outline;
-	outline.setShapeType(RECTANGLE);
-	outline.addVertex(x, y);
-	outline.addVertex(x, y);
-	outline.addVertex(x, y);
-	outline.addVertex(x, y);
+	if (shapeTypeSelected == S_POINT) {
+		outline.setShapeType(S_POINT);
+		outline.addVertex(x, y);
+	}
+	else if (shapeTypeSelected == LINE) {
+		outline.setShapeType(LINE);
+		outline.addVertex(x, y);
+		outline.addVertex(x, y);
+	}
+	else {
+		outline.setShapeType(RECTANGLE);
+		outline.addVertex(x, y);
+		outline.addVertex(x, y);
+		outline.addVertex(x, y);
+		outline.addVertex(x, y);
+	}
 
 	Shape shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices());
 
 	drawingFrame = new Frame();
 	drawingFrame->setOutline(outline);
 	drawingFrame->setShapeDrawn(shapeDrawn);
+	if (shapeTypeSelected == S_POINT) {
+		drawingFrame->setActive(false);
+	}
+
 	drawingFrames.push_back(drawingFrame);
 }
 
@@ -256,44 +282,59 @@ void handleContinueDraw(float x, float y) {
 	}
 
 	Shape outline;
-	outline.setShapeType(RECTANGLE);
-
 	Shape shapeDrawn;
 
-	if (x > mouseDownPoint.x) {
-		if (y > mouseDownPoint.y) {
-			outline.addVertex(x, y);
-			outline.addVertex(x, mouseDownPoint.y);
-			outline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
-			outline.addVertex(mouseDownPoint.x, y);
+	if (shapeTypeSelected == S_POINT) {
+		outline.setShapeType(S_POINT);
+		outline.addVertex(x, y);
 
-			shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices(), 2);
-		}
-		else {
-			outline.addVertex(x, mouseDownPoint.y);
-			outline.addVertex(x, y);
-			outline.addVertex(mouseDownPoint.x, y);
-			outline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
+		shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices());
+	}
+	else if (shapeTypeSelected == LINE) {
+		outline.setShapeType(LINE);
+		outline.addVertex(mouseDownPoint);
+		outline.addVertex(x, y);
 
-			shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices(), 3);
-		}
+		shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices());
 	}
 	else {
-		if (y > mouseDownPoint.y) {
-			outline.addVertex(mouseDownPoint.x, y);
-			outline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
-			outline.addVertex(x, mouseDownPoint.y);
-			outline.addVertex(x, y);
+		outline.setShapeType(RECTANGLE);
 
-			shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices(), 1);
+		if (x > mouseDownPoint.x) {
+			if (y > mouseDownPoint.y) {
+				outline.addVertex(x, y);
+				outline.addVertex(x, mouseDownPoint.y);
+				outline.addVertex(mouseDownPoint);
+				outline.addVertex(mouseDownPoint.x, y);
+
+				shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices());
+			}
+			else {
+				outline.addVertex(x, mouseDownPoint.y);
+				outline.addVertex(x, y);
+				outline.addVertex(mouseDownPoint.x, y);
+				outline.addVertex(mouseDownPoint);
+
+				shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices());
+			}
 		}
 		else {
-			outline.addVertex(mouseDownPoint.x, mouseDownPoint.y);
-			outline.addVertex(mouseDownPoint.x, y);
-			outline.addVertex(x, y);
-			outline.addVertex(x, mouseDownPoint.y);
+			if (y > mouseDownPoint.y) {
+				outline.addVertex(mouseDownPoint.x, y);
+				outline.addVertex(mouseDownPoint);
+				outline.addVertex(x, mouseDownPoint.y);
+				outline.addVertex(x, y);
 
-			shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices(), 0);
+				shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices());
+			}
+			else {
+				outline.addVertex(mouseDownPoint);
+				outline.addVertex(mouseDownPoint.x, y);
+				outline.addVertex(x, y);
+				outline.addVertex(x, mouseDownPoint.y);
+
+				shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices());
+			}
 		}
 	}
 
@@ -311,10 +352,12 @@ void handleCompleteDraw(float x, float y) {
 	drawStart = false;
 
 	if (x == mouseDownPoint.x && y == mouseDownPoint.y) {
-		delete drawingFrame;
-		drawingFrame = NULL;
+		if (shapeTypeSelected != S_POINT) {
+			delete drawingFrame;
+			drawingFrame = NULL;
 
-		drawingFrames.pop_back();
+			drawingFrames.pop_back();
+		}
 	}
 
 	glutPostRedisplay();
@@ -333,15 +376,25 @@ void handleDragDrawingFrame(float x, float y) {
 		mouseDownPoint.y = y;
 
 		Shape outline;
-		outline.setShapeType(RECTANGLE);
-		outline.addVertex(drawingFrame->getOutline().getVertex(0).x + offsetX,
-										drawingFrame->getOutline().getVertex(0).y + offsetY);
-		outline.addVertex(drawingFrame->getOutline().getVertex(1).x + offsetX,
-										drawingFrame->getOutline().getVertex(1).y + offsetY);
-		outline.addVertex(drawingFrame->getOutline().getVertex(2).x + offsetX,
-										drawingFrame->getOutline().getVertex(2).y + offsetY);
-		outline.addVertex(drawingFrame->getOutline().getVertex(3).x + offsetX,
-										drawingFrame->getOutline().getVertex(3).y + offsetY);
+		if (shapeTypeSelected == LINE) {
+			outline.setShapeType(LINE);
+			outline.addVertex(drawingFrame->getOutline().getVertex(0).x + offsetX,
+								drawingFrame->getOutline().getVertex(0).y + offsetY);
+			outline.addVertex(drawingFrame->getOutline().getVertex(1).x + offsetX,
+								drawingFrame->getOutline().getVertex(1).y + offsetY);
+		}
+		else {
+			outline.setShapeType(RECTANGLE);
+
+			outline.addVertex(drawingFrame->getOutline().getVertex(0).x + offsetX,
+								drawingFrame->getOutline().getVertex(0).y + offsetY);
+			outline.addVertex(drawingFrame->getOutline().getVertex(1).x + offsetX,
+								drawingFrame->getOutline().getVertex(1).y + offsetY);
+			outline.addVertex(drawingFrame->getOutline().getVertex(2).x + offsetX,
+								drawingFrame->getOutline().getVertex(2).y + offsetY);
+			outline.addVertex(drawingFrame->getOutline().getVertex(3).x + offsetX,
+								drawingFrame->getOutline().getVertex(3).y + offsetY);
+		}
 
 		Shape shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices());
 
@@ -358,12 +411,47 @@ bool isActiveFrameClicked(float x, float y) {
 	}
 
 	if (drawingFrame->getActive()) {
-		Vertex2F topLeftVertex = drawingFrame->getOutline().getVertex(3);
-		Vertex2F bottomRightVertex = drawingFrame->getOutline().getVertex(1);
+		if (drawingFrame->getOutline().getShapeType() == LINE) {
+			Vertex2F startVertex = drawingFrame->getOutline().getVertex(0);
+			Vertex2F endVertex = drawingFrame->getOutline().getVertex(1);
 
-		if ((x > topLeftVertex.x && x < bottomRightVertex.x) &&
-			(y > bottomRightVertex.y && y < topLeftVertex.y)) {
-			return true;
+			if (startVertex.x > endVertex.x) {
+				if (x < endVertex.x || x > startVertex.x) {
+					return false;
+				}
+			}
+			else {
+				if (x < startVertex.x || x > endVertex.x) {
+					return false;
+				}
+			}
+
+			if (startVertex.y > endVertex.y) {
+				if (y < endVertex.y || y > startVertex.y) {
+					return false;
+				}
+			}
+			else {
+				if (y < startVertex.y || y > endVertex.y) {
+					return false;
+				}
+			}
+
+			float slopeOriginal = (endVertex.y - startVertex.y) / (endVertex.x - startVertex.x);
+			float slopeNew = (endVertex.y - y) / (endVertex.x - x);
+			if (slopeNew > (slopeOriginal - 0.1) && slopeNew < (slopeOriginal + 0.1)) {
+				std::cout << "Got it" << std::endl;
+				return true;
+			}
+		}
+		else {
+			Vertex2F topLeftVertex = drawingFrame->getOutline().getVertex(3);
+			Vertex2F bottomRightVertex = drawingFrame->getOutline().getVertex(1);
+
+			if ((x > topLeftVertex.x && x < bottomRightVertex.x) &&
+				(y > bottomRightVertex.y && y < topLeftVertex.y)) {
+				return true;
+			}
 		}
 	}
 
