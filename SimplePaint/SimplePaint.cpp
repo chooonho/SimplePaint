@@ -25,56 +25,61 @@ Vertex2F mouseUpPoint;
 std::vector<Button*> ptrUIButtons;
 std::vector<Frame*> drawingFrames;
 
-Icon makeIcon(ShapeType shapeType, float width, float height, Vertex2F centerPoint) {
+Shape initShape(ShapeType shapeType, std::vector<Vertex2F> outlineVertices, int mouseDownVPos = 0) {
 	const double MATH_PI = 3.141592;
 
-	Icon icon;
-	icon.setCenterPoint(centerPoint);
-	icon.setHeight(height);
-	icon.setWidth(width);
+	int mouseUpVPos = (mouseDownVPos + 2) % 4;
+	float halfHeight = (outlineVertices[3].y - outlineVertices[1].y) / 2;
+	float halfWidth = (outlineVertices[1].x - outlineVertices[3].x) / 2;
 
-	float halfWidth = width / 2;
-	float halfHeight = height / 2;
+	Vertex2F centerPoint;
+	centerPoint.x = outlineVertices[3].x + halfWidth;
+	centerPoint.y = outlineVertices[1].y + halfHeight;
 
 	Shape shape;
 	shape.setShapeType(shapeType);
-	
+
 	switch (shapeType) {
 		case S_POINT:
 			shape.addVertex(centerPoint);
 			break;
 		case LINE:
-			shape.addVertex((centerPoint.x - halfWidth), (centerPoint.y - halfHeight));
-			shape.addVertex((centerPoint.x + halfWidth), (centerPoint.y + halfHeight));
+			shape.addVertex(outlineVertices[mouseDownVPos]);
+			shape.addVertex(outlineVertices[mouseUpVPos]);
 			break;
 		case TRIANGLE_F:
 			shape.setIsFilled(true);
 		case TRIANGLE:
 			shape.addVertex((centerPoint.x), (centerPoint.y + halfHeight));
-			shape.addVertex((centerPoint.x + halfWidth), (centerPoint.y - halfHeight));
-			shape.addVertex((centerPoint.x - halfWidth), (centerPoint.y - halfHeight));
+			shape.addVertex(outlineVertices[1]);
+			shape.addVertex(outlineVertices[2]);
 			break;
 		case RECTANGLE_F:
 			shape.setIsFilled(true);
 		case RECTANGLE:
-			shape.addVertex((centerPoint.x + halfWidth), (centerPoint.y + halfHeight));
-			shape.addVertex((centerPoint.x + halfWidth), (centerPoint.y - halfHeight));
-			shape.addVertex((centerPoint.x - halfWidth), (centerPoint.y - halfHeight));
-			shape.addVertex((centerPoint.x - halfWidth), (centerPoint.y + halfHeight));
+			for (int i = 0; i < outlineVertices.size(); i++) {
+				shape.addVertex(outlineVertices[i]);
+			}
 			break;
 		case OVAL_F:
 			shape.setIsFilled(true);
 		case OVAL:
-			float radiusX = halfWidth;
-			float radiusY = halfHeight / 2;
-
 			for (int i = 0; i < 360; i++) {
 				float angle = i * MATH_PI / 180;
-				shape.addVertex((centerPoint.x + (cos(angle) * radiusX)), (centerPoint.y + (sin(angle) * radiusY)));
+				shape.addVertex((centerPoint.x + (cos(angle) * halfWidth)), (centerPoint.y + (sin(angle) * halfHeight)));
 			}
-			break;
+		break;
 	}
-	
+
+	return shape;
+}
+
+Icon makeIcon(ShapeType iconShapeType, std::vector<Vertex2F> buttonVertices) {
+	Shape shape = initShape(iconShapeType, buttonVertices);
+
+	Icon icon;
+	icon.setHeight(buttonVertices[3].y - buttonVertices[1].y);
+	icon.setWidth(buttonVertices[1].x - buttonVertices[3].x);
 	icon.setShape(shape);
 
 	return icon;
@@ -101,15 +106,9 @@ void initUIButton() {
 		ptrUIButton->addShapeVertex(vertex.x + BUTTON_WIDTH, vertex.y - BUTTON_HEIGHT);
 		ptrUIButton->addShapeVertex(vertex.x, vertex.y - BUTTON_HEIGHT);
 		ptrUIButton->addShapeVertex(vertex.x, vertex.y);
-		ptrUIButtons.push_back(ptrUIButton);
+		ptrUIButton->setIcon(makeIcon(SHAPE_TYPES[i], ptrUIButton->getShape().getAllVertices()));
 
-		Vertex2F centerPoint;
-		centerPoint.x = vertex.x + (BUTTON_WIDTH / 2.0);
-		centerPoint.y = vertex.y - (BUTTON_HEIGHT / 2.0);
-		float iconHeight = BUTTON_HEIGHT - 20.0;
-		float iconWidth = BUTTON_WIDTH - 20.0;
-		
-		ptrUIButton->setIcon(makeIcon(SHAPE_TYPES[i], iconWidth, iconHeight, centerPoint));
+		ptrUIButtons.push_back(ptrUIButton);
 
 		vertex.x += BUTTON_WIDTH;
 	}
@@ -137,6 +136,29 @@ void renderUIButton() {
 		std::vector<Vertex2F> buttonVertices = ptrUIButtons[i]->getShape().getAllVertices();
 		std::vector<Vertex2F> iconVertices = ptrUIButtons[i]->getIcon().getShape().getAllVertices();
 
+		glColor3f(0.0, 0.0, 0.0);
+		if (ptrUIButtons[i]->getIcon().getShape().getShapeType() == S_POINT) {
+			glBegin(GL_POINTS);
+			glVertex2f(iconVertices[0].x, iconVertices[0].y);
+			glEnd();
+		}
+		else {
+			if (ptrUIButtons[i]->getIcon().getShape().getIsFilled()) {
+				glBegin(GL_POLYGON);
+				for (int j = 0; j < iconVertices.size(); j++) {
+					glVertex2f(iconVertices[j].x, iconVertices[j].y);
+				}
+				glEnd();
+			}
+			else {
+				glBegin(GL_LINE_LOOP);
+				for (int j = 0; j < iconVertices.size(); j++) {
+					glVertex2f(iconVertices[j].x, iconVertices[j].y);
+				}
+				glEnd();
+			}
+		}
+
 		if (ptrUIButtons[i]->getShape().getShapeType() == shapeTypeSelected) {
 			glColor3f(1.0, 0.0, 0.0);
 		}
@@ -148,29 +170,6 @@ void renderUIButton() {
 				glVertex2f(buttonVertices[j].x, buttonVertices[j].y);
 			}
 		glEnd();
-
-		glColor3f(0.0, 0.0, 0.0);
-		if (ptrUIButtons[i]->getIcon().getShape().getShapeType() == S_POINT) {
-			glBegin(GL_POINTS);
-				glVertex2f(iconVertices[0].x, iconVertices[0].y);
-			glEnd();
-		}
-		else {
-			if (ptrUIButtons[i]->getIcon().getShape().getIsFilled()) {
-				glBegin(GL_POLYGON);
-					for (int j = 0; j < iconVertices.size(); j++) {
-						glVertex2f(iconVertices[j].x, iconVertices[j].y);
-					}
-				glEnd();
-			}
-			else {
-				glBegin(GL_LINE_LOOP);
-					for (int j = 0; j < iconVertices.size(); j++) {
-						glVertex2f(iconVertices[j].x, iconVertices[j].y);
-					}
-				glEnd();
-			}
-		}
 	}
 }
 
@@ -224,55 +223,6 @@ void draw() {
 			glDisable(GL_LINE_STIPPLE);
 		}
 	}
-}
-
-Shape initShape(ShapeType shapeType, std::vector<Vertex2F> outlineVertices, int mouseDownVPos = 0) {
-	const double MATH_PI = 3.141592;
-
-	int mouseUpVPos = (mouseDownVPos + 2) % 4;
-	float halfHeight = (outlineVertices[3].y - outlineVertices[1].y) / 2;
-	float halfWidth = (outlineVertices[1].x - outlineVertices[3].x) / 2;
-
-	Vertex2F centerPoint;
-	centerPoint.x = outlineVertices[3].x + halfWidth;
-	centerPoint.y = outlineVertices[1].y + halfHeight;
-
-	Shape shape;
-	shape.setShapeType(shapeType);
-
-	switch (shapeType) {
-		case S_POINT:
-			shape.addVertex(centerPoint);
-			break;
-		case LINE:
-			shape.addVertex(outlineVertices[mouseDownVPos]);
-			shape.addVertex(outlineVertices[mouseUpVPos]);
-			break;
-		case TRIANGLE_F:
-			shape.setIsFilled(true);
-		case TRIANGLE:
-			shape.addVertex((centerPoint.x), (centerPoint.y + halfHeight));
-			shape.addVertex(outlineVertices[1]);
-			shape.addVertex(outlineVertices[2]);
-			break;
-		case RECTANGLE_F:
-			shape.setIsFilled(true);
-		case RECTANGLE:
-			for (int i = 0; i < outlineVertices.size(); i++) {
-				shape.addVertex(outlineVertices[i]);
-			}
-			break;
-		case OVAL_F:
-			shape.setIsFilled(true);
-		case OVAL:
-			for (int i = 0; i < 360; i++) {
-				float angle = i * MATH_PI / 180;
-				shape.addVertex((centerPoint.x + (cos(angle) * halfWidth)), (centerPoint.y + (sin(angle) * halfHeight)));
-			}
-		break;
-	}
-
-	return shape;
 }
 
 void handleStartDraw(float x, float y) {
