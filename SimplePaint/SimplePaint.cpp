@@ -608,6 +608,10 @@ void processMenuEvents(int option) {
 void processColorMenuEvents(int option) {
 	color = COLORS[option];
 
+	if (drawingFrame == NULL) {
+		return;
+	}
+
 	Shape shapeDrawn = initShape(drawingFrame->getShapeDrawn().getShapeType(), drawingFrame->getOutline().getAllVertices(),
 									drawingFrame->getShapeDrawn().getSize(), color);
 
@@ -639,6 +643,10 @@ void processPointSizeMenuEvents(int option) {
 		case M_SIZE_7:
 			pointSize = 7.0f;
 			break;
+	}
+
+	if (drawingFrame == NULL) {
+		return;
 	}
 
 	float size = (drawingFrame->getShapeDrawn().getShapeType() == S_POINT) ? pointSize : lineWidth;
@@ -673,6 +681,10 @@ void processLineWidthMenuEvents(int option) {
 		case M_SIZE_7:
 			lineWidth = 7.0f;
 			break;
+	}
+
+	if (drawingFrame == NULL) {
+		return;
 	}
 
 	float size = (drawingFrame->getShapeDrawn().getShapeType() == S_POINT) ? pointSize : lineWidth;
