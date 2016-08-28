@@ -19,6 +19,10 @@ float Shape::getSize() {
 	return mSize;
 }
 
+ColorRGB3F Shape::getColor() {
+	return mColor;
+}
+
 std::vector<Vertex2F> Shape::getAllVertices() {
 	return mVertices;
 }
@@ -59,9 +63,20 @@ void Shape::setSize(float size) {
 	mSize = size;
 }
 
+void Shape::setColor(ColorRGB3F color) {
+	mColor = color;
+}
+
+void Shape::setColor(float red, float green, float blue) {
+	mColor.red = red;
+	mColor.green = green;
+	mColor.blue = blue;
+}
+
 void Shape::operator=(const Shape& rhShape) {
 	mVertices = rhShape.mVertices;
 	mIsFilled = rhShape.mIsFilled;
 	mShapeType = rhShape.mShapeType;
 	mSize = rhShape.mSize;
+	mColor = rhShape.mColor;
 }

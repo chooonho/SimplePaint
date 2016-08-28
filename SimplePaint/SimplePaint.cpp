@@ -23,6 +23,7 @@ bool drawStart = false;
 bool activeFrameClicked = false;
 float pointSize = DEFAULT_POINT_SIZE;
 float lineWidth = DEFAULT_LINE_WIDTH;
+ColorRGB3F color;
 Frame* drawingFrame = NULL;
 ShapeType shapeTypeSelected = NONE;
 Vertex2F mouseDownPoint;
@@ -46,10 +47,11 @@ enum MarkerSize {
 	M_SIZE_7
 };
 
-Shape initShape(ShapeType shapeType, std::vector<Vertex2F> outlineVertices, float size) {
+Shape initShape(ShapeType shapeType, std::vector<Vertex2F> outlineVertices, float size, ColorRGB3F color) {
 	Shape shape;
 	shape.setShapeType(shapeType);
 	shape.setSize(size);
+	shape.setColor(color);
 
 	if (shapeType != S_POINT && shapeType != LINE) {
 		float halfHeight = (outlineVertices[3].y - outlineVertices[1].y) / 2;
@@ -142,7 +144,7 @@ Icon makeIcon(ShapeType iconShapeType, std::vector<Vertex2F> buttonVertices) {
 	Icon icon;
 	icon.setHeight(iconHeight);
 	icon.setWidth(iconWidth);
-	icon.setShape(initShape(iconShapeType, buttonVertices, size));
+	icon.setShape(initShape(iconShapeType, buttonVertices, size, COLORS[BLACK]));
 
 	return icon;
 }
@@ -254,7 +256,7 @@ void draw() {
 		Shape shapeDrawn = drawingFrames[i]->getShapeDrawn();
 		std::vector<Vertex2F> shapeDrawnVertices = shapeDrawn.getAllVertices();
 
-		glColor3f(0.0f, 0.0f, 0.0f);
+		glColor3f(shapeDrawn.getColor().red, shapeDrawn.getColor().green, shapeDrawn.getColor().blue);
 		glPointSize(shapeDrawn.getSize());
 		glLineWidth(shapeDrawn.getSize());
 		if (shapeDrawn.getShapeType() == S_POINT) {
@@ -337,7 +339,7 @@ void handleStartDraw(float x, float y) {
 	}
 
 	float size = (shapeTypeSelected == S_POINT) ? pointSize : lineWidth;
-	Shape shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices(), size);
+	Shape shapeDrawn = initShape(shapeTypeSelected, outline.getAllVertices(), size, color);
 
 	drawingFrame = new Frame();
 	drawingFrame->setOutline(outline);
@@ -396,7 +398,7 @@ void handleContinueDraw(float x, float y) {
 	}
 
 	Shape shapeDrawn = initShape(drawingFrame->getShapeDrawn().getShapeType(), outline.getAllVertices(),
-									drawingFrame->getShapeDrawn().getSize());
+									drawingFrame->getShapeDrawn().getSize(), drawingFrame->getShapeDrawn().getColor());
 
 	drawingFrame->setOutline(outline);
 	drawingFrame->setShapeDrawn(shapeDrawn);
@@ -452,8 +454,8 @@ void handleDragDrawingFrame(float x, float y) {
 								drawingFrame->getOutline().getVertex(3).y + offsetY);
 		}
 
-		float size = (drawingFrame->getShapeDrawn().getShapeType() == S_POINT) ? pointSize : lineWidth;
-		Shape shapeDrawn = initShape(drawingFrame->getShapeDrawn().getShapeType(), outline.getAllVertices(), size);
+		Shape shapeDrawn = initShape(drawingFrame->getShapeDrawn().getShapeType(), outline.getAllVertices(),
+										drawingFrame->getShapeDrawn().getSize(), drawingFrame->getShapeDrawn().getColor());
 
 		drawingFrame->setOutline(outline);
 		drawingFrame->setShapeDrawn(shapeDrawn);
@@ -604,7 +606,14 @@ void processMenuEvents(int option) {
 }
 
 void processColorMenuEvents(int option) {
+	color = COLORS[option];
 
+	Shape shapeDrawn = initShape(drawingFrame->getShapeDrawn().getShapeType(), drawingFrame->getOutline().getAllVertices(),
+									drawingFrame->getShapeDrawn().getSize(), color);
+
+	drawingFrame->setShapeDrawn(shapeDrawn);
+
+	glutPostRedisplay();
 }
 
 void processPointSizeMenuEvents(int option) {
@@ -633,7 +642,8 @@ void processPointSizeMenuEvents(int option) {
 	}
 
 	float size = (drawingFrame->getShapeDrawn().getShapeType() == S_POINT) ? pointSize : lineWidth;
-	Shape shapeDrawn = initShape(drawingFrame->getShapeDrawn().getShapeType(), drawingFrame->getOutline().getAllVertices(), size);
+	Shape shapeDrawn = initShape(drawingFrame->getShapeDrawn().getShapeType(), drawingFrame->getOutline().getAllVertices(),
+									size, drawingFrame->getShapeDrawn().getColor());
 
 	drawingFrame->setShapeDrawn(shapeDrawn);
 
@@ -666,7 +676,8 @@ void processLineWidthMenuEvents(int option) {
 	}
 
 	float size = (drawingFrame->getShapeDrawn().getShapeType() == S_POINT) ? pointSize : lineWidth;
-	Shape shapeDrawn = initShape(drawingFrame->getShapeDrawn().getShapeType(), drawingFrame->getOutline().getAllVertices(), size);
+	Shape shapeDrawn = initShape(drawingFrame->getShapeDrawn().getShapeType(), drawingFrame->getOutline().getAllVertices(),
+									size, drawingFrame->getShapeDrawn().getColor());
 
 	drawingFrame->setShapeDrawn(shapeDrawn);
 
@@ -675,14 +686,14 @@ void processLineWidthMenuEvents(int option) {
 
 void createGLUTMenus() {
 	int colorMenu = glutCreateMenu(processColorMenuEvents);
-	glutAddMenuEntry("Black", 1);
-	glutAddMenuEntry("White", 2);
-	glutAddMenuEntry("Red", 3);
-	glutAddMenuEntry("Green", 4);
-	glutAddMenuEntry("Blue", 5);
-	glutAddMenuEntry("Yellow", 6);
-	glutAddMenuEntry("Orange", 7);
-	glutAddMenuEntry("Purple", 8);
+	glutAddMenuEntry("Black", BLACK);
+	glutAddMenuEntry("White", WHITE);
+	glutAddMenuEntry("Red", RED);
+	glutAddMenuEntry("Green", GREEN);
+	glutAddMenuEntry("Blue", BLUE);
+	glutAddMenuEntry("Yellow", YELLOW);
+	glutAddMenuEntry("Orange", ORANGE);
+	glutAddMenuEntry("Purple", PURPLE);
 
 	int pointSizeMenu = glutCreateMenu(processPointSizeMenuEvents);
 	glutAddMenuEntry("1.0", M_SIZE_1);
