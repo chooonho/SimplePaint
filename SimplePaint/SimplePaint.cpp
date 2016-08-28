@@ -613,6 +613,10 @@ void processColorMenuEvents(int option) {
 		return;
 	}
 
+	if (!drawingFrame->getActive()) {
+		return;
+	}
+
 	Shape shapeDrawn = initShape(drawingFrame->getShapeDrawn().getShapeType(), drawingFrame->getOutline().getAllVertices(),
 									drawingFrame->getShapeDrawn().getSize(), color);
 
@@ -647,6 +651,10 @@ void processPointSizeMenuEvents(int option) {
 	}
 
 	if (drawingFrame == NULL) {
+		return;
+	}
+
+	if (!drawingFrame->getActive()) {
 		return;
 	}
 
@@ -685,6 +693,10 @@ void processLineWidthMenuEvents(int option) {
 	}
 
 	if (drawingFrame == NULL) {
+		return;
+	}
+
+	if (!drawingFrame->getActive()) {
 		return;
 	}
 
