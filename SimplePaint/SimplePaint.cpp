@@ -350,6 +350,8 @@ void handleStartDraw(float x, float y) {
 	}
 
 	drawingFrames.push_back(drawingFrame);
+
+	glutPostRedisplay();
 }
 
 void handleContinueDraw(float x, float y) {
@@ -361,7 +363,7 @@ void handleContinueDraw(float x, float y) {
 	outline.setShapeType(drawingFrame->getOutline().getShapeType());
 
 	if (outline.getShapeType() == S_POINT) {
-		outline.addVertex(x, y);
+		return;
 	}
 	else if (outline.getShapeType() == LINE) {
 		outline.addVertex(mouseDownPoint);
