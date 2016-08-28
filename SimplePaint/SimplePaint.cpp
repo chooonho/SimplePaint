@@ -299,6 +299,13 @@ void draw() {
 		glVertex2f(0, windowHeight - UI_TOOLBAR_HEIGHT);
 		glVertex2f(0, windowHeight);
 	glEnd();
+
+	glLineWidth(DEFAULT_LINE_WIDTH + 1);
+	glColor3f(0.0f, 0.0f, 0.0f);
+	glBegin(GL_LINES);
+		glVertex2f(0, windowHeight - UI_TOOLBAR_HEIGHT);
+		glVertex2f(windowWidth, windowHeight - UI_TOOLBAR_HEIGHT);
+	glEnd();
 }
 
 void handleStartDraw(float x, float y) {
