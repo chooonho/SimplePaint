@@ -631,6 +631,13 @@ void processPointSizeMenuEvents(int option) {
 			pointSize = 7.0f;
 			break;
 	}
+
+	float size = (drawingFrame->getShapeDrawn().getShapeType() == S_POINT) ? pointSize : lineWidth;
+	Shape shapeDrawn = initShape(drawingFrame->getShapeDrawn().getShapeType(), drawingFrame->getOutline().getAllVertices(), size);
+
+	drawingFrame->setShapeDrawn(shapeDrawn);
+
+	glutPostRedisplay();
 }
 
 void processLineWidthMenuEvents(int option) {
@@ -657,6 +664,13 @@ void processLineWidthMenuEvents(int option) {
 			lineWidth = 7.0f;
 			break;
 	}
+
+	float size = (drawingFrame->getShapeDrawn().getShapeType() == S_POINT) ? pointSize : lineWidth;
+	Shape shapeDrawn = initShape(drawingFrame->getShapeDrawn().getShapeType(), drawingFrame->getOutline().getAllVertices(), size);
+
+	drawingFrame->setShapeDrawn(shapeDrawn);
+
+	glutPostRedisplay();
 }
 
 void createGLUTMenus() {
