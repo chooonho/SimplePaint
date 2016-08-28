@@ -12,6 +12,7 @@
 #include "Button.h"
 #include "Frame.h"
 
+const ColorRGB3F BACKGROUND_COLOR = { 0.8f, 0.8f, 0.8f };
 const int UI_TOOLBAR_HEIGHT = BUTTON_HEIGHT + (BUTTON_PADDING_OUTER * 2);
 const int DEFAULT_POINT_SIZE = 1;
 const int DEFAULT_LINE_WIDTH = 1;
@@ -198,7 +199,7 @@ void renderUIButton() {
 		std::vector<Vertex2F> buttonVertices = ptrUIButtons[i]->getShape().getAllVertices();
 		std::vector<Vertex2F> iconVertices = ptrUIButtons[i]->getIcon().getShape().getAllVertices();
 
-		glColor3f(0.0, 0.0, 0.0);
+		glColor3f(ICON_COLOR.red, ICON_COLOR.green, ICON_COLOR.blue);
 		if (ptrUIButtons[i]->getIcon().getShape().getShapeType() == S_POINT) {
 			glBegin(GL_POINTS);
 				glVertex2f(iconVertices[0].x, iconVertices[0].y);
@@ -222,10 +223,10 @@ void renderUIButton() {
 		}
 
 		if (ptrUIButtons[i]->getShape().getShapeType() == shapeTypeSelected) {
-			glColor3f(1.0, 0.0, 0.0);
+			glColor3f(BUTTON_COLOR_ACTIVE.red, BUTTON_COLOR_ACTIVE.green, BUTTON_COLOR_ACTIVE.blue);
 		}
 		else {
-			glColor3f(0.0, 0.0, 0.0);
+			glColor3f(BUTTON_COLOR.red, BUTTON_COLOR.green, BUTTON_COLOR.blue);
 		}
 		glBegin(GL_LINE_LOOP);
 			for (int j = 0; j < buttonVertices.size(); j++) {
@@ -281,7 +282,7 @@ void draw() {
 		if (drawingFrames[i]->getActive()) {
 			std::vector<Vertex2F> outlineVertices = drawingFrames[i]->getOutline().getAllVertices();
 
-			glColor3f(0.0f, 0.25f, 1.0f);
+			glColor3f(OUTLINE_COLOR.red, OUTLINE_COLOR.green, OUTLINE_COLOR.blue);
 			glLineWidth(DEFAULT_LINE_WIDTH);
 			glEnable(GL_LINE_STIPPLE);
 			glLineStipple(1, 0xF0F0);
@@ -294,7 +295,7 @@ void draw() {
 		}
 	}
 
-	glColor3f(0.8f, 0.8f, 0.8f);
+	glColor3f(BACKGROUND_COLOR.red, BACKGROUND_COLOR.green, BACKGROUND_COLOR.blue);
 	glBegin(GL_POLYGON);
 		glVertex2f(windowWidth, windowHeight);
 		glVertex2f(windowWidth, windowHeight - UI_TOOLBAR_HEIGHT);
@@ -303,7 +304,7 @@ void draw() {
 	glEnd();
 
 	glLineWidth(DEFAULT_LINE_WIDTH + 1);
-	glColor3f(0.0f, 0.0f, 0.0f);
+	glColor3f(BUTTON_COLOR.red, BUTTON_COLOR.green, BUTTON_COLOR.blue);
 	glBegin(GL_LINES);
 		glVertex2f(0, windowHeight - UI_TOOLBAR_HEIGHT);
 		glVertex2f(windowWidth, windowHeight - UI_TOOLBAR_HEIGHT);

@@ -22,3 +22,5 @@ class Icon {
 		float mHeight;
 		Shape mShape;
 };
+
+const ColorRGB3F ICON_COLOR = { 0.0f, 0.0f, 0.0f };
