@@ -233,6 +233,22 @@ void renderUIButton() {
 				glVertex2f(buttonVertices[j].x, buttonVertices[j].y);
 			}
 		glEnd();
+
+		if (i == MAX_BUTTON_COUNT - 1) {
+			glColor3f(color.red, color.green, color.blue);
+			glBegin(GL_QUADS);
+				for (int j = 0; j < buttonVertices.size(); j++) {
+					glVertex2f(buttonVertices[j].x + BUTTON_PADDING_OUTER + BUTTON_WIDTH, buttonVertices[j].y);
+				}
+			glEnd();
+
+			glColor3f(BUTTON_COLOR.red, BUTTON_COLOR.green, BUTTON_COLOR.blue);
+			glBegin(GL_LINE_LOOP);
+				for (int j = 0; j < buttonVertices.size(); j++) {
+					glVertex2f(buttonVertices[j].x + BUTTON_PADDING_OUTER + BUTTON_WIDTH, buttonVertices[j].y);
+				}
+			glEnd();
+		}
 	}
 }
 
@@ -619,18 +635,14 @@ void processMenuEvents(int option) {
 void processColorMenuEvents(int option) {
 	color = COLORS[option];
 
-	if (drawingFrame == NULL) {
-		return;
+	renderUIButton();
+
+	if (drawingFrame != NULL && drawingFrame->getActive()) {
+		Shape shapeDrawn = initShape(drawingFrame->getShapeDrawn().getShapeType(), drawingFrame->getOutline().getAllVertices(),
+			drawingFrame->getShapeDrawn().getSize(), color);
+
+		drawingFrame->setShapeDrawn(shapeDrawn);
 	}
-
-	if (!drawingFrame->getActive()) {
-		return;
-	}
-
-	Shape shapeDrawn = initShape(drawingFrame->getShapeDrawn().getShapeType(), drawingFrame->getOutline().getAllVertices(),
-									drawingFrame->getShapeDrawn().getSize(), color);
-
-	drawingFrame->setShapeDrawn(shapeDrawn);
 
 	glutPostRedisplay();
 }
