@@ -754,7 +754,6 @@ void processColorMenuEvents(int option) {
 // Process the point size menu events
 void processPointSizeMenuEvents(int option) {
 	// Assign the point size to the size selected
-	// If there is an active drawing frame, change the point size of the shape drawn within the drawing frame
 	switch (option) {
 		case M_SIZE_1:
 			pointSize = 1.0f;
@@ -779,27 +778,14 @@ void processPointSizeMenuEvents(int option) {
 			break;
 	}
 
-	if (drawingFrame == NULL) {
-		return;
-	}
-
-	if (!drawingFrame->getActive()) {
-		return;
-	}
-
-	float size = (drawingFrame->getShapeDrawn().getShapeType() == S_POINT) ? pointSize : lineWidth;
-	Shape shapeDrawn = initShape(drawingFrame->getShapeDrawn().getShapeType(), drawingFrame->getOutline().getAllVertices(),
-									size, drawingFrame->getShapeDrawn().getColor());
-
-	drawingFrame->setShapeDrawn(shapeDrawn);
-
 	glutPostRedisplay();
 }
 
 // Process the line width menu events
 void processLineWidthMenuEvents(int option) {
 	// Assign the line width to the size selected
-	// If there is an active drawing frame, change the line width of the shape drawn within the drawing frame
+	// If there is an active drawing frame AND the shape is not a point,
+	// change the line width of the shape drawn within the drawing frame
 	switch (option) {
 		case M_SIZE_1:
 			lineWidth = 1.0f;
@@ -832,11 +818,12 @@ void processLineWidthMenuEvents(int option) {
 		return;
 	}
 
-	float size = (drawingFrame->getShapeDrawn().getShapeType() == S_POINT) ? pointSize : lineWidth;
-	Shape shapeDrawn = initShape(drawingFrame->getShapeDrawn().getShapeType(), drawingFrame->getOutline().getAllVertices(),
-									size, drawingFrame->getShapeDrawn().getColor());
+	if (drawingFrame->getShapeDrawn().getShapeType() != S_POINT) {
+		Shape shapeDrawn = initShape(drawingFrame->getShapeDrawn().getShapeType(), drawingFrame->getOutline().getAllVertices(),
+										lineWidth, drawingFrame->getShapeDrawn().getColor());
 
-	drawingFrame->setShapeDrawn(shapeDrawn);
+		drawingFrame->setShapeDrawn(shapeDrawn);
+	}
 
 	glutPostRedisplay();
 }
