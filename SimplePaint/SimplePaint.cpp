@@ -411,7 +411,7 @@ void mouseClick(int button, int state, int x, int y) {
 				return;
 			}
 
-			if (activeFrameClicked = isActiveFrameClicked(x, windowHeight - y)) {
+			if ((activeFrameClicked = isActiveFrameClicked(x, windowHeight - y))) {
 				mouseDragPoint.x = mouseDownPoint.x;
 				mouseDragPoint.y = mouseDownPoint.y;
 				
