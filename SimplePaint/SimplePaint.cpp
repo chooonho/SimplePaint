@@ -207,10 +207,18 @@ void renderUIButton() {
 		}
 		else {
 			if (ptrUIButtons[i]->getIcon().getShape().getIsFilled()) {
-				glBegin(GL_POLYGON);
-					for (int j = 0; j < iconVertices.size(); j++) {
-						glVertex2f(iconVertices[j].x, iconVertices[j].y);
-					}
+				if (ptrUIButtons[i]->getIcon().getShape().getShapeType() == TRIANGLE_F) {
+					glBegin(GL_TRIANGLES);
+				}
+				else if (ptrUIButtons[i]->getIcon().getShape().getShapeType() == RECTANGLE_F) {
+					glBegin(GL_QUADS);
+				}
+				else {
+					glBegin(GL_TRIANGLE_FAN);
+				}
+				for (int j = 0; j < iconVertices.size(); j++) {
+					glVertex2f(iconVertices[j].x, iconVertices[j].y);
+				}
 				glEnd();
 			}
 			else {
