@@ -48,6 +48,23 @@ enum MarkerSize {
 	M_SIZE_7
 };
 
+void disposeUIButton() {
+	for (int i = 0; i < MAX_BUTTON_COUNT; i++) {
+		delete ptrUIButtons.back();
+		ptrUIButtons.pop_back();
+	}
+}
+
+void disposeDrawingFrames() {
+	while (!drawingFrames.empty()) {
+		delete drawingFrames.back();
+		drawingFrames.back() = NULL;
+		drawingFrames.pop_back();
+	}
+
+	drawingFrame = NULL;
+}
+
 Shape initShape(ShapeType shapeType, std::vector<Vertex2F> outlineVertices, float size, ColorRGB3F color) {
 	Shape shape;
 	shape.setShapeType(shapeType);
@@ -103,244 +120,6 @@ Shape initShape(ShapeType shapeType, std::vector<Vertex2F> outlineVertices, floa
 	}
 
 	return shape;
-}
-
-Icon makeIcon(ShapeType iconShapeType, std::vector<Vertex2F> buttonVertices) {
-	buttonVertices[0].x = buttonVertices[0].x - BUTTON_PADDING_INNER;
-	buttonVertices[0].y = buttonVertices[0].y - BUTTON_PADDING_INNER;
-	buttonVertices[1].x = buttonVertices[1].x - BUTTON_PADDING_INNER;
-	buttonVertices[1].y = buttonVertices[1].y + BUTTON_PADDING_INNER;
-	buttonVertices[2].x = buttonVertices[2].x + BUTTON_PADDING_INNER;
-	buttonVertices[2].y = buttonVertices[2].y + BUTTON_PADDING_INNER;
-	buttonVertices[3].x = buttonVertices[3].x + BUTTON_PADDING_INNER;
-	buttonVertices[3].y = buttonVertices[3].y - BUTTON_PADDING_INNER;
-
-	float iconHeight = buttonVertices[3].y - buttonVertices[1].y;
-	float iconWidth = buttonVertices[1].x - buttonVertices[3].x;
-
-	if (iconShapeType == S_POINT) {
-		Vertex2F vertex;
-		vertex.x = buttonVertices[3].x + ((buttonVertices[1].x - buttonVertices[3].x) / 2);
-		vertex.y = buttonVertices[1].y + ((buttonVertices[3].y - buttonVertices[1].y) / 2);
-
-		buttonVertices.clear();
-		buttonVertices.push_back(vertex);
-	}
-	else if (iconShapeType == LINE) {
-		Vertex2F vertexStart;
-		Vertex2F vertexEnd;
-
-		vertexStart.x = buttonVertices[2].x;
-		vertexStart.y = buttonVertices[2].y;
-		vertexEnd.x = buttonVertices[0].x;
-		vertexEnd.y = buttonVertices[0].y;
-
-		buttonVertices.clear();
-		buttonVertices.push_back(vertexStart);
-		buttonVertices.push_back(vertexEnd);
-	}
-
-	float size = (iconShapeType == S_POINT) ? DEFAULT_POINT_SIZE : DEFAULT_LINE_WIDTH;
-
-	Icon icon;
-	icon.setHeight(iconHeight);
-	icon.setWidth(iconWidth);
-	icon.setShape(initShape(iconShapeType, buttonVertices, size, COLORS[BLACK]));
-
-	return icon;
-}
-
-void initUIButton() {
-	Vertex2F vertex;
-	vertex.x = 0.0f;
-	vertex.y = windowHeight - BUTTON_PADDING_OUTER;
-
-	for (int i = 0; i < MAX_BUTTON_COUNT; i++) {
-		vertex.x += BUTTON_PADDING_OUTER;
-
-		Button* ptrUIButton = new Button();
-		ptrUIButton->setWidth(BUTTON_WIDTH);
-		ptrUIButton->setHeight(BUTTON_HEIGHT);
-		ptrUIButton->addShapeType(SHAPE_TYPES[i]);
-		ptrUIButton->addShapeVertex(vertex.x + BUTTON_WIDTH, vertex.y);
-		ptrUIButton->addShapeVertex(vertex.x + BUTTON_WIDTH, vertex.y - BUTTON_HEIGHT);
-		ptrUIButton->addShapeVertex(vertex.x, vertex.y - BUTTON_HEIGHT);
-		ptrUIButton->addShapeVertex(vertex.x, vertex.y);
-		ptrUIButton->setIcon(makeIcon(SHAPE_TYPES[i], ptrUIButton->getShape().getAllVertices()));
-
-		ptrUIButtons.push_back(ptrUIButton);
-
-		vertex.x += BUTTON_WIDTH;
-	}
-}
-
-void disposeUIButton() {
-	for (int i = 0; i < MAX_BUTTON_COUNT; i++) {
-		delete ptrUIButtons.back();
-		ptrUIButtons.pop_back();
-	}
-}
-
-void disposeDrawingFrames() {
-	while (!drawingFrames.empty()) {
-		delete drawingFrames.back();
-		drawingFrames.back() = NULL;
-		drawingFrames.pop_back();
-	}
-
-	drawingFrame = NULL;
-}
-
-void renderUIButton() {
-	glPointSize(DEFAULT_POINT_SIZE + 1);
-	glLineWidth(DEFAULT_LINE_WIDTH + 1);
-
-	for (int i = 0; i < MAX_BUTTON_COUNT; i++) {
-		std::vector<Vertex2F> buttonVertices = ptrUIButtons[i]->getShape().getAllVertices();
-		std::vector<Vertex2F> iconVertices = ptrUIButtons[i]->getIcon().getShape().getAllVertices();
-
-		glColor3f(ICON_COLOR.red, ICON_COLOR.green, ICON_COLOR.blue);
-		if (ptrUIButtons[i]->getIcon().getShape().getShapeType() == S_POINT) {
-			glBegin(GL_POINTS);
-				glVertex2f(iconVertices[0].x, iconVertices[0].y);
-			glEnd();
-		}
-		else {
-			if (ptrUIButtons[i]->getIcon().getShape().getIsFilled()) {
-				if (ptrUIButtons[i]->getIcon().getShape().getShapeType() == TRIANGLE_F) {
-					glBegin(GL_TRIANGLES);
-				}
-				else if (ptrUIButtons[i]->getIcon().getShape().getShapeType() == RECTANGLE_F) {
-					glBegin(GL_QUADS);
-				}
-				else {
-					glBegin(GL_TRIANGLE_FAN);
-				}
-				for (int j = 0; j < iconVertices.size(); j++) {
-					glVertex2f(iconVertices[j].x, iconVertices[j].y);
-				}
-				glEnd();
-			}
-			else {
-				glBegin(GL_LINE_LOOP);
-					for (int j = 0; j < iconVertices.size(); j++) {
-						glVertex2f(iconVertices[j].x, iconVertices[j].y);
-					}
-				glEnd();
-			}
-		}
-
-		if (ptrUIButtons[i]->getShape().getShapeType() == shapeTypeSelected) {
-			glColor3f(BUTTON_COLOR_ACTIVE.red, BUTTON_COLOR_ACTIVE.green, BUTTON_COLOR_ACTIVE.blue);
-		}
-		else {
-			glColor3f(BUTTON_COLOR.red, BUTTON_COLOR.green, BUTTON_COLOR.blue);
-		}
-		glBegin(GL_LINE_LOOP);
-			for (int j = 0; j < buttonVertices.size(); j++) {
-				glVertex2f(buttonVertices[j].x, buttonVertices[j].y);
-			}
-		glEnd();
-
-		if (i == MAX_BUTTON_COUNT - 1) {
-			glColor3f(color.red, color.green, color.blue);
-			glBegin(GL_QUADS);
-				for (int j = 0; j < buttonVertices.size(); j++) {
-					glVertex2f(buttonVertices[j].x + BUTTON_PADDING_OUTER + BUTTON_WIDTH, buttonVertices[j].y);
-				}
-			glEnd();
-
-			glColor3f(BUTTON_COLOR.red, BUTTON_COLOR.green, BUTTON_COLOR.blue);
-			glBegin(GL_LINE_LOOP);
-				for (int j = 0; j < buttonVertices.size(); j++) {
-					glVertex2f(buttonVertices[j].x + BUTTON_PADDING_OUTER + BUTTON_WIDTH, buttonVertices[j].y);
-				}
-			glEnd();
-		}
-	}
-}
-
-void setUIButtonClicked() {
-	if (mouseDownPoint.y < (windowHeight - UI_TOOLBAR_HEIGHT)) {
-		return;
-	}
-
-	for (int i = 0; i < MAX_BUTTON_COUNT; i++) {
-		Vertex2F vertexTopLeft = ptrUIButtons[i]->getShape().getVertex(3);
-		Vertex2F vertexBottomRight = ptrUIButtons[i]->getShape().getVertex(1);
-
-		if ((mouseUpPoint.x > vertexTopLeft.x && mouseUpPoint.x < vertexBottomRight.x) &&
-			(mouseUpPoint.y > vertexBottomRight.y && mouseUpPoint.y < vertexTopLeft.y)) {
-			shapeTypeSelected = ptrUIButtons[i]->getShape().getShapeType();
-		}
-	}
-}
-
-void draw() {
-	for (int i = 0; i < drawingFrames.size(); i++) {
-		Shape shapeDrawn = drawingFrames[i]->getShapeDrawn();
-		std::vector<Vertex2F> shapeDrawnVertices = shapeDrawn.getAllVertices();
-
-		glColor3f(shapeDrawn.getColor().red, shapeDrawn.getColor().green, shapeDrawn.getColor().blue);
-		glPointSize(shapeDrawn.getSize());
-		glLineWidth(shapeDrawn.getSize());
-		if (shapeDrawn.getShapeType() == S_POINT) {
-			glBegin(GL_POINTS);
-		}
-		else if (shapeDrawn.getShapeType() == LINE) {
-			glBegin(GL_LINES);
-		}
-		else {
-			if (shapeDrawn.getIsFilled()) {
-				if (shapeDrawn.getShapeType() == TRIANGLE_F) {
-					glBegin(GL_TRIANGLES);
-				}
-				else if (shapeDrawn.getShapeType() == RECTANGLE_F) {
-					glBegin(GL_QUADS);
-				}
-				else {
-					glBegin(GL_TRIANGLE_FAN);
-				}
-			}
-			else {
-				glBegin(GL_LINE_LOOP);
-			}
-		}
-		for (int i = 0; i < shapeDrawnVertices.size(); i++) {
-			glVertex2f(shapeDrawnVertices[i].x, shapeDrawnVertices[i].y);
-		}
-		glEnd();
-
-		if (drawingFrames[i]->getActive()) {
-			std::vector<Vertex2F> outlineVertices = drawingFrames[i]->getOutline().getAllVertices();
-
-			glColor3f(OUTLINE_COLOR.red, OUTLINE_COLOR.green, OUTLINE_COLOR.blue);
-			glLineWidth(DEFAULT_LINE_WIDTH);
-			glEnable(GL_LINE_STIPPLE);
-			glLineStipple(1, 0xF0F0);
-			glBegin(GL_LINE_LOOP);
-				for (int j = 0; j < outlineVertices.size(); j++) {
-					glVertex2f(outlineVertices[j].x, outlineVertices[j].y);
-				}
-			glEnd();
-			glDisable(GL_LINE_STIPPLE);
-		}
-	}
-
-	glColor3f(BACKGROUND_COLOR.red, BACKGROUND_COLOR.green, BACKGROUND_COLOR.blue);
-	glBegin(GL_POLYGON);
-		glVertex2f(windowWidth, windowHeight);
-		glVertex2f(windowWidth, windowHeight - UI_TOOLBAR_HEIGHT);
-		glVertex2f(0, windowHeight - UI_TOOLBAR_HEIGHT);
-		glVertex2f(0, windowHeight);
-	glEnd();
-
-	glLineWidth(DEFAULT_LINE_WIDTH + 1);
-	glColor3f(BUTTON_COLOR.red, BUTTON_COLOR.green, BUTTON_COLOR.blue);
-	glBegin(GL_LINES);
-		glVertex2f(0, windowHeight - UI_TOOLBAR_HEIGHT);
-		glVertex2f(windowWidth, windowHeight - UI_TOOLBAR_HEIGHT);
-	glEnd();
 }
 
 void handleStartDraw(float x, float y) {
@@ -595,6 +374,227 @@ void mouseClick(int button, int state, int x, int y) {
 
 		return;
 	}
+}
+
+Icon makeIcon(ShapeType iconShapeType, std::vector<Vertex2F> buttonVertices) {
+	buttonVertices[0].x = buttonVertices[0].x - BUTTON_PADDING_INNER;
+	buttonVertices[0].y = buttonVertices[0].y - BUTTON_PADDING_INNER;
+	buttonVertices[1].x = buttonVertices[1].x - BUTTON_PADDING_INNER;
+	buttonVertices[1].y = buttonVertices[1].y + BUTTON_PADDING_INNER;
+	buttonVertices[2].x = buttonVertices[2].x + BUTTON_PADDING_INNER;
+	buttonVertices[2].y = buttonVertices[2].y + BUTTON_PADDING_INNER;
+	buttonVertices[3].x = buttonVertices[3].x + BUTTON_PADDING_INNER;
+	buttonVertices[3].y = buttonVertices[3].y - BUTTON_PADDING_INNER;
+
+	float iconHeight = buttonVertices[3].y - buttonVertices[1].y;
+	float iconWidth = buttonVertices[1].x - buttonVertices[3].x;
+
+	if (iconShapeType == S_POINT) {
+		Vertex2F vertex;
+		vertex.x = buttonVertices[3].x + ((buttonVertices[1].x - buttonVertices[3].x) / 2);
+		vertex.y = buttonVertices[1].y + ((buttonVertices[3].y - buttonVertices[1].y) / 2);
+
+		buttonVertices.clear();
+		buttonVertices.push_back(vertex);
+	}
+	else if (iconShapeType == LINE) {
+		Vertex2F vertexStart;
+		Vertex2F vertexEnd;
+
+		vertexStart.x = buttonVertices[2].x;
+		vertexStart.y = buttonVertices[2].y;
+		vertexEnd.x = buttonVertices[0].x;
+		vertexEnd.y = buttonVertices[0].y;
+
+		buttonVertices.clear();
+		buttonVertices.push_back(vertexStart);
+		buttonVertices.push_back(vertexEnd);
+	}
+
+	float size = (iconShapeType == S_POINT) ? DEFAULT_POINT_SIZE : DEFAULT_LINE_WIDTH;
+
+	Icon icon;
+	icon.setHeight(iconHeight);
+	icon.setWidth(iconWidth);
+	icon.setShape(initShape(iconShapeType, buttonVertices, size, COLORS[BLACK]));
+
+	return icon;
+}
+
+void initUIButton() {
+	Vertex2F vertex;
+	vertex.x = 0.0f;
+	vertex.y = windowHeight - BUTTON_PADDING_OUTER;
+
+	for (int i = 0; i < MAX_BUTTON_COUNT; i++) {
+		vertex.x += BUTTON_PADDING_OUTER;
+
+		Button* ptrUIButton = new Button();
+		ptrUIButton->setWidth(BUTTON_WIDTH);
+		ptrUIButton->setHeight(BUTTON_HEIGHT);
+		ptrUIButton->addShapeType(SHAPE_TYPES[i]);
+		ptrUIButton->addShapeVertex(vertex.x + BUTTON_WIDTH, vertex.y);
+		ptrUIButton->addShapeVertex(vertex.x + BUTTON_WIDTH, vertex.y - BUTTON_HEIGHT);
+		ptrUIButton->addShapeVertex(vertex.x, vertex.y - BUTTON_HEIGHT);
+		ptrUIButton->addShapeVertex(vertex.x, vertex.y);
+		ptrUIButton->setIcon(makeIcon(SHAPE_TYPES[i], ptrUIButton->getShape().getAllVertices()));
+
+		ptrUIButtons.push_back(ptrUIButton);
+
+		vertex.x += BUTTON_WIDTH;
+	}
+}
+
+void setUIButtonClicked() {
+	if (mouseDownPoint.y < (windowHeight - UI_TOOLBAR_HEIGHT)) {
+		return;
+	}
+
+	for (int i = 0; i < MAX_BUTTON_COUNT; i++) {
+		Vertex2F vertexTopLeft = ptrUIButtons[i]->getShape().getVertex(3);
+		Vertex2F vertexBottomRight = ptrUIButtons[i]->getShape().getVertex(1);
+
+		if ((mouseUpPoint.x > vertexTopLeft.x && mouseUpPoint.x < vertexBottomRight.x) &&
+			(mouseUpPoint.y > vertexBottomRight.y && mouseUpPoint.y < vertexTopLeft.y)) {
+			shapeTypeSelected = ptrUIButtons[i]->getShape().getShapeType();
+		}
+	}
+}
+
+void renderUIButton() {
+	glPointSize(DEFAULT_POINT_SIZE + 1);
+	glLineWidth(DEFAULT_LINE_WIDTH + 1);
+
+	for (int i = 0; i < MAX_BUTTON_COUNT; i++) {
+		std::vector<Vertex2F> buttonVertices = ptrUIButtons[i]->getShape().getAllVertices();
+		std::vector<Vertex2F> iconVertices = ptrUIButtons[i]->getIcon().getShape().getAllVertices();
+
+		glColor3f(ICON_COLOR.red, ICON_COLOR.green, ICON_COLOR.blue);
+		if (ptrUIButtons[i]->getIcon().getShape().getShapeType() == S_POINT) {
+			glBegin(GL_POINTS);
+			glVertex2f(iconVertices[0].x, iconVertices[0].y);
+			glEnd();
+		}
+		else {
+			if (ptrUIButtons[i]->getIcon().getShape().getIsFilled()) {
+				if (ptrUIButtons[i]->getIcon().getShape().getShapeType() == TRIANGLE_F) {
+					glBegin(GL_TRIANGLES);
+				}
+				else if (ptrUIButtons[i]->getIcon().getShape().getShapeType() == RECTANGLE_F) {
+					glBegin(GL_QUADS);
+				}
+				else {
+					glBegin(GL_TRIANGLE_FAN);
+				}
+				for (int j = 0; j < iconVertices.size(); j++) {
+					glVertex2f(iconVertices[j].x, iconVertices[j].y);
+				}
+				glEnd();
+			}
+			else {
+				glBegin(GL_LINE_LOOP);
+				for (int j = 0; j < iconVertices.size(); j++) {
+					glVertex2f(iconVertices[j].x, iconVertices[j].y);
+				}
+				glEnd();
+			}
+		}
+
+		if (ptrUIButtons[i]->getShape().getShapeType() == shapeTypeSelected) {
+			glColor3f(BUTTON_COLOR_ACTIVE.red, BUTTON_COLOR_ACTIVE.green, BUTTON_COLOR_ACTIVE.blue);
+		}
+		else {
+			glColor3f(BUTTON_COLOR.red, BUTTON_COLOR.green, BUTTON_COLOR.blue);
+		}
+		glBegin(GL_LINE_LOOP);
+		for (int j = 0; j < buttonVertices.size(); j++) {
+			glVertex2f(buttonVertices[j].x, buttonVertices[j].y);
+		}
+		glEnd();
+
+		if (i == MAX_BUTTON_COUNT - 1) {
+			glColor3f(color.red, color.green, color.blue);
+			glBegin(GL_QUADS);
+			for (int j = 0; j < buttonVertices.size(); j++) {
+				glVertex2f(buttonVertices[j].x + BUTTON_PADDING_OUTER + BUTTON_WIDTH, buttonVertices[j].y);
+			}
+			glEnd();
+
+			glColor3f(BUTTON_COLOR.red, BUTTON_COLOR.green, BUTTON_COLOR.blue);
+			glBegin(GL_LINE_LOOP);
+			for (int j = 0; j < buttonVertices.size(); j++) {
+				glVertex2f(buttonVertices[j].x + BUTTON_PADDING_OUTER + BUTTON_WIDTH, buttonVertices[j].y);
+			}
+			glEnd();
+		}
+	}
+}
+
+void draw() {
+	for (int i = 0; i < drawingFrames.size(); i++) {
+		Shape shapeDrawn = drawingFrames[i]->getShapeDrawn();
+		std::vector<Vertex2F> shapeDrawnVertices = shapeDrawn.getAllVertices();
+
+		glColor3f(shapeDrawn.getColor().red, shapeDrawn.getColor().green, shapeDrawn.getColor().blue);
+		glPointSize(shapeDrawn.getSize());
+		glLineWidth(shapeDrawn.getSize());
+		if (shapeDrawn.getShapeType() == S_POINT) {
+			glBegin(GL_POINTS);
+		}
+		else if (shapeDrawn.getShapeType() == LINE) {
+			glBegin(GL_LINES);
+		}
+		else {
+			if (shapeDrawn.getIsFilled()) {
+				if (shapeDrawn.getShapeType() == TRIANGLE_F) {
+					glBegin(GL_TRIANGLES);
+				}
+				else if (shapeDrawn.getShapeType() == RECTANGLE_F) {
+					glBegin(GL_QUADS);
+				}
+				else {
+					glBegin(GL_TRIANGLE_FAN);
+				}
+			}
+			else {
+				glBegin(GL_LINE_LOOP);
+			}
+		}
+		for (int i = 0; i < shapeDrawnVertices.size(); i++) {
+			glVertex2f(shapeDrawnVertices[i].x, shapeDrawnVertices[i].y);
+		}
+		glEnd();
+
+		if (drawingFrames[i]->getActive()) {
+			std::vector<Vertex2F> outlineVertices = drawingFrames[i]->getOutline().getAllVertices();
+
+			glColor3f(OUTLINE_COLOR.red, OUTLINE_COLOR.green, OUTLINE_COLOR.blue);
+			glLineWidth(DEFAULT_LINE_WIDTH);
+			glEnable(GL_LINE_STIPPLE);
+			glLineStipple(1, 0xF0F0);
+			glBegin(GL_LINE_LOOP);
+			for (int j = 0; j < outlineVertices.size(); j++) {
+				glVertex2f(outlineVertices[j].x, outlineVertices[j].y);
+			}
+			glEnd();
+			glDisable(GL_LINE_STIPPLE);
+		}
+	}
+
+	glColor3f(BACKGROUND_COLOR.red, BACKGROUND_COLOR.green, BACKGROUND_COLOR.blue);
+	glBegin(GL_POLYGON);
+	glVertex2f(windowWidth, windowHeight);
+	glVertex2f(windowWidth, windowHeight - UI_TOOLBAR_HEIGHT);
+	glVertex2f(0, windowHeight - UI_TOOLBAR_HEIGHT);
+	glVertex2f(0, windowHeight);
+	glEnd();
+
+	glLineWidth(DEFAULT_LINE_WIDTH + 1);
+	glColor3f(BUTTON_COLOR.red, BUTTON_COLOR.green, BUTTON_COLOR.blue);
+	glBegin(GL_LINES);
+	glVertex2f(0, windowHeight - UI_TOOLBAR_HEIGHT);
+	glVertex2f(windowWidth, windowHeight - UI_TOOLBAR_HEIGHT);
+	glEnd();
 }
 
 void renderScene() {
