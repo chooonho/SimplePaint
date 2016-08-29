@@ -268,7 +268,15 @@ void draw() {
 		}
 		else {
 			if (shapeDrawn.getIsFilled()) {
-				glBegin(GL_POLYGON);
+				if (shapeDrawn.getShapeType() == TRIANGLE_F) {
+					glBegin(GL_TRIANGLES);
+				}
+				else if (shapeDrawn.getShapeType() == RECTANGLE_F) {
+					glBegin(GL_QUADS);
+				}
+				else {
+					glBegin(GL_TRIANGLE_FAN);
+				}
 			}
 			else {
 				glBegin(GL_LINE_LOOP);
