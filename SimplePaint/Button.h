@@ -1,3 +1,9 @@
+/*******************************************************************************
+*	Name				: OOI CHOON HO
+*	Student ID			: 4805604
+*	Coursework Title	: CSCI336 Assignment 1
+*	Objecttive			: Develop a simple 2D Paint program
+*******************************************************************************/
 #pragma once
 
 #ifndef _SHAPE_H_
@@ -12,25 +18,32 @@
 
 class Button {
 	public:
-		Button() { };
+		// Constructor
+		Button() { mHeight = 0; mWidth = 0; };
+		// Getters
 		Shape getShape();
 		Icon getIcon();
 		float getHeight();
 		float getWidth();
+		// Setters
 		void setShape(Shape);
 		void setIcon(Icon);
 		void setHeight(float);
 		void setWidth(float);
+		// Adds a vertex to the shape of button
 		void addShapeVertex(Vertex2F);
 		void addShapeVertex(float, float);
+		// Adds the type of shape to the shape of button
 		void addShapeType(ShapeType);
 	private:
+		// Attributes
 		Shape mShape;
 		Icon mIcon;
 		float mHeight;
 		float mWidth;
 };
 
+// Constant variables
 const int MAX_BUTTON_COUNT = 8;
 const float BUTTON_HEIGHT = 50.0;
 const float BUTTON_WIDTH = 50.0;

@@ -12,11 +12,13 @@
 #include "Button.h"
 #include "Frame.h"
 
+// Constant variables
 const ColorRGB3F BACKGROUND_COLOR = { 0.8f, 0.8f, 0.8f };
 const int UI_TOOLBAR_HEIGHT = BUTTON_HEIGHT + (BUTTON_PADDING_OUTER * 2);
 const int DEFAULT_POINT_SIZE = 1;
 const int DEFAULT_LINE_WIDTH = 1;
 
+// Global variables
 int windowId;
 int windowWidth = 640;
 int windowHeight = 480;
@@ -33,11 +35,13 @@ Vertex2F mouseUpPoint;
 std::vector<Button*> ptrUIButtons;
 std::vector<Frame*> drawingFrames;
 
+// Enumeration for labelling menu events
 enum MenuEvent {
 	CLEAR,
 	EXIT
 };
 
+// Enumeration for labelling the point size and line width
 enum MarkerSize {
 	M_SIZE_1,
 	M_SIZE_2,
@@ -48,6 +52,7 @@ enum MarkerSize {
 	M_SIZE_7
 };
 
+// Clean up the UI buttons
 void disposeUIButton() {
 	for (int i = 0; i < MAX_BUTTON_COUNT; i++) {
 		delete ptrUIButtons.back();
@@ -55,6 +60,7 @@ void disposeUIButton() {
 	}
 }
 
+// Clean up the drawing frames (shape drawn)
 void disposeDrawingFrames() {
 	while (!drawingFrames.empty()) {
 		delete drawingFrames.back();
@@ -65,7 +71,11 @@ void disposeDrawingFrames() {
 	drawingFrame = NULL;
 }
 
+// Initialize a shape based on its specification and vertices
 Shape initShape(ShapeType shapeType, std::vector<Vertex2F> outlineVertices, float size, ColorRGB3F color) {
+	// Sets the shape to its specification
+	// Then determine and store the vertices of the shape based on the type of shapes
+	// At the same time, check if the shape requires to be filled or just its wireframe
 	Shape shape;
 	shape.setShapeType(shapeType);
 	shape.setSize(size);
@@ -122,7 +132,15 @@ Shape initShape(ShapeType shapeType, std::vector<Vertex2F> outlineVertices, floa
 	return shape;
 }
 
+// Handles the process of drawing (Start)
 void handleStartDraw(float x, float y) {
+	// Do not do anything if no shape is selected
+	// Deactivates the previous drawing frame if there is any
+	// Turn on the switch to indicate that the process of drawing has started
+	// Determines the outline of the drawing frame to be used based on the shape selected
+	// Calls the function to get the shape drawn based on its specifications
+	// Assign both the outline and the shape drawn to the drawing frame
+	// Store the drawing frame for later use
 	if (shapeTypeSelected == NONE) {
 		return;
 	}
@@ -165,7 +183,12 @@ void handleStartDraw(float x, float y) {
 	glutPostRedisplay();
 }
 
+// Handles the process of drawing (Continuous/Dragging)
 void handleContinueDraw(float x, float y) {
+	// Do not do anything if there is no indication of that drawing has started OR if there is no drawing frame available
+	// Determines the outline of the drawing frame to be used based on the shape selected
+	// Calls the function to get the shape drawn based on its specifications
+	// Re-assign both the outline and the shape drawn to the drawing frame
 	if (!drawStart || drawingFrame == NULL) {
 		return;
 	}
@@ -220,7 +243,11 @@ void handleContinueDraw(float x, float y) {
 	glutPostRedisplay();
 }
 
+// Handles the process of drawing (Complete/End)
 void handleCompleteDraw(float x, float y) {
+	// Do not do anything if there is no indication of that drawing has started OR if there is no drawing frame available
+	// Turn off the switch to indicates the process of drawing has ended
+	// Dispose the previous drawing frame if there is nothing drawn
 	if (!drawStart || drawingFrame == NULL) {
 		return;
 	}
@@ -239,7 +266,14 @@ void handleCompleteDraw(float x, float y) {
 	glutPostRedisplay();
 }
 
+// Handles the dragging of active drawing frames
 void handleDragDrawingFrame(float x, float y) {
+	// Do not do anything if there is no drawing frame available
+	// Do not do anything if there is no active drawing frame selected/clicked
+	// Calculates the offset of both X and Y
+	// Determine the outline to be used based on the specifications with new coordinates
+	// Determine the shape to be used based on the specifications with new coordinates
+	// Re-assign both the outline and the shape drawn to the drawing frame
 	if (drawingFrame == NULL) {
 		return;
 	}
@@ -278,7 +312,16 @@ void handleDragDrawingFrame(float x, float y) {
 	}
 }
 
+// Check if there is an active drawing frame clicked
 bool isActiveFrameClicked(float x, float y) {
+	// Return false if there is no drawing frame available
+	// Return false if the current drawing frame is not active
+	// For drawing frame that holds a line:
+	// - Check if the clicked position is within the drawing frame
+	// - Check if the slope generated from clicked position and the line end point
+	//   is the same as the original line (with max deviation of 0.1)
+	// For drawing frame that holds other shapes:
+	// - Check if the clicked position is within the drawing frame
 	if (drawingFrame == NULL) {
 		return false;
 	}
@@ -330,16 +373,29 @@ bool isActiveFrameClicked(float x, float y) {
 	return false;
 }
 
+// Callback function for mouse dragging
 void mouseDrag(int x, int y) {
+	// Call a function to handle the dragging of active drawing frames
 	handleDragDrawingFrame(x, windowHeight - y);
 
+	// Re-assign the new mouse draging position
 	mouseDragPoint.x = x;
 	mouseDragPoint.y = windowHeight - y;
 
+	// Call a function to handle the continuation of drawing
 	handleContinueDraw(x, windowHeight - y);
 }
 
+// Callback function for mouse click
 void mouseClick(int button, int state, int x, int y) {
+	// Mouse left button clicked:
+	// - Re-assign the new mouse clicked position
+	// - Do not start drawing if the mouse clicked position is within the UI toolbar OR
+	//   if the mouse clicked position is within an active drawing frame
+	// - If the previous condition does not hold, call a function to handle the start process of drawing
+	// Mouse left button released:
+	// - Re-assign the new mouse released position
+	// - Call a function to handle the end process of drawing
 	if (button == GLUT_LEFT_BUTTON) {
 		if (state == GLUT_DOWN) {
 			mouseDownPoint.x = x;
@@ -376,7 +432,13 @@ void mouseClick(int button, int state, int x, int y) {
 	}
 }
 
+// Create an icon for a button
 Icon makeIcon(ShapeType iconShapeType, std::vector<Vertex2F> buttonVertices) {
+	// Re-position the vertices (to shrink the size of icon to fit it into the button)
+	// Calculates the height and width of icon
+	// Determines the vertices of the icon based on the type of shape
+	// Gets the shape required based on the icon specifications
+	// Assign the height, width and the shape to icon
 	buttonVertices[0].x = buttonVertices[0].x - BUTTON_PADDING_INNER;
 	buttonVertices[0].y = buttonVertices[0].y - BUTTON_PADDING_INNER;
 	buttonVertices[1].x = buttonVertices[1].x - BUTTON_PADDING_INNER;
@@ -421,7 +483,11 @@ Icon makeIcon(ShapeType iconShapeType, std::vector<Vertex2F> buttonVertices) {
 	return icon;
 }
 
+// Creates UI button
 void initUIButton() {
+	// Gets the start position of the first UI button
+	// Keeps the loop running until all the buton has been created and stored for later use
+	// Within the loop, determines the new position of the vertices and icon of buttons
 	Vertex2F vertex;
 	vertex.x = 0.0f;
 	vertex.y = windowHeight - BUTTON_PADDING_OUTER;
@@ -445,7 +511,11 @@ void initUIButton() {
 	}
 }
 
+// Checked the UI button that is selected/clicked (type of shape selected)
 void setUIButtonClicked() {
+	// Do not do anything if the mouse clicked position is not within the UI toolbar
+	// Go through all the buttons and checked the button that has been selected
+	// Set the type of shape to the shape selected
 	if (mouseDownPoint.y < (windowHeight - UI_TOOLBAR_HEIGHT)) {
 		return;
 	}
@@ -461,7 +531,13 @@ void setUIButtonClicked() {
 	}
 }
 
+// Draws the UI buttons
 void renderUIButton() {
+	// Set the line width and point size to be used
+	// Go through all the buttons:
+	// - Get the icon of the button and draw it
+	// - Get the shape of the button and draw it
+	// - At the end of the loop, draw an extra button that shows the color selected next to the last UI button
 	glPointSize(DEFAULT_POINT_SIZE + 1);
 	glLineWidth(DEFAULT_LINE_WIDTH + 1);
 
@@ -472,7 +548,7 @@ void renderUIButton() {
 		glColor3f(ICON_COLOR.red, ICON_COLOR.green, ICON_COLOR.blue);
 		if (ptrUIButtons[i]->getIcon().getShape().getShapeType() == S_POINT) {
 			glBegin(GL_POINTS);
-			glVertex2f(iconVertices[0].x, iconVertices[0].y);
+				glVertex2f(iconVertices[0].x, iconVertices[0].y);
 			glEnd();
 		}
 		else {
@@ -530,7 +606,12 @@ void renderUIButton() {
 	}
 }
 
+// Draws all the stored drawing frames
 void draw() {
+	// Go through all the drawing frames:
+	// - Draw all the shapes contained in the frames
+	// - Draw the outline of the drawing frame if it is active
+	// Lastly, draw an overlay layer as the background of the UI toolbar
 	for (int i = 0; i < drawingFrames.size(); i++) {
 		Shape shapeDrawn = drawingFrames[i]->getShapeDrawn();
 		std::vector<Vertex2F> shapeDrawnVertices = shapeDrawn.getAllVertices();
@@ -573,9 +654,9 @@ void draw() {
 			glEnable(GL_LINE_STIPPLE);
 			glLineStipple(1, 0xF0F0);
 			glBegin(GL_LINE_LOOP);
-			for (int j = 0; j < outlineVertices.size(); j++) {
-				glVertex2f(outlineVertices[j].x, outlineVertices[j].y);
-			}
+				for (int j = 0; j < outlineVertices.size(); j++) {
+					glVertex2f(outlineVertices[j].x, outlineVertices[j].y);
+				}
 			glEnd();
 			glDisable(GL_LINE_STIPPLE);
 		}
@@ -583,37 +664,44 @@ void draw() {
 
 	glColor3f(BACKGROUND_COLOR.red, BACKGROUND_COLOR.green, BACKGROUND_COLOR.blue);
 	glBegin(GL_POLYGON);
-	glVertex2f(windowWidth, windowHeight);
-	glVertex2f(windowWidth, windowHeight - UI_TOOLBAR_HEIGHT);
-	glVertex2f(0, windowHeight - UI_TOOLBAR_HEIGHT);
-	glVertex2f(0, windowHeight);
+		glVertex2f(windowWidth, windowHeight);
+		glVertex2f(windowWidth, windowHeight - UI_TOOLBAR_HEIGHT);
+		glVertex2f(0, windowHeight - UI_TOOLBAR_HEIGHT);
+		glVertex2f(0, windowHeight);
 	glEnd();
 
 	glLineWidth(DEFAULT_LINE_WIDTH + 1);
 	glColor3f(BUTTON_COLOR.red, BUTTON_COLOR.green, BUTTON_COLOR.blue);
 	glBegin(GL_LINES);
-	glVertex2f(0, windowHeight - UI_TOOLBAR_HEIGHT);
-	glVertex2f(windowWidth, windowHeight - UI_TOOLBAR_HEIGHT);
+		glVertex2f(0, windowHeight - UI_TOOLBAR_HEIGHT);
+		glVertex2f(windowWidth, windowHeight - UI_TOOLBAR_HEIGHT);
 	glEnd();
 }
 
+// Callback function for glut display
 void renderScene() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	// Calls the function to draw all the drawing frames
 	draw();
 
+	// Calls the function to set the UI button clicked and the type of shape selected
+	// Draws the UI button
 	setUIButtonClicked();
 	renderUIButton();
 
 	glutSwapBuffers();
 }
 
+// Callback function for glut reshape function
 void reshapeScene(int width, int height) {
+	// Do not let the height to be 0 (min height is 1)
+	// Re-assign the height and width of the window
+	// Clear up all the UI buttons then re-initialize them using the new window height and width
 	if (height == 0) {
 		height = 1;
 	}
 
-	float ratio = 1.0 * width / height;
 	windowWidth = width;
 	windowHeight = height;
 	
@@ -624,10 +712,14 @@ void reshapeScene(int width, int height) {
 	glLoadIdentity();
 	glViewport(0, 0, width, height);
 	gluOrtho2D(0, width, 0, height);
-	glMatrixMode(GL_MODELVIEW);
 }
 
+// Process the main menu events
 void processMenuEvents(int option) {
+	// For CLEAR:
+	// - Clear up all the drawing frames
+	// For EXIT:
+	// - Destroys the current window then exit the program
 	switch (option) {
 		case CLEAR:
 			disposeDrawingFrames();
@@ -640,7 +732,11 @@ void processMenuEvents(int option) {
 	}
 }
 
+// Process the color menu events
 void processColorMenuEvents(int option) {
+	// Assign the color to the color selected
+	// Re-render UI button (to change the color of the last button that shows selected color)
+	// If there is an active drawing frame, change the color of the shape drawn within the drawing frame
 	color = COLORS[option];
 
 	renderUIButton();
@@ -655,7 +751,10 @@ void processColorMenuEvents(int option) {
 	glutPostRedisplay();
 }
 
+// Process the point size menu events
 void processPointSizeMenuEvents(int option) {
+	// Assign the point size to the size selected
+	// If there is an active drawing frame, change the point size of the shape drawn within the drawing frame
 	switch (option) {
 		case M_SIZE_1:
 			pointSize = 1.0f;
@@ -697,7 +796,10 @@ void processPointSizeMenuEvents(int option) {
 	glutPostRedisplay();
 }
 
+// Process the line width menu events
 void processLineWidthMenuEvents(int option) {
+	// Assign the line width to the size selected
+	// If there is an active drawing frame, change the line width of the shape drawn within the drawing frame
 	switch (option) {
 		case M_SIZE_1:
 			lineWidth = 1.0f;
@@ -739,6 +841,7 @@ void processLineWidthMenuEvents(int option) {
 	glutPostRedisplay();
 }
 
+// Creates the popup menu and sub menus
 void createGLUTMenus() {
 	int colorMenu = glutCreateMenu(processColorMenuEvents);
 	glutAddMenuEntry("Black", BLACK);
@@ -787,6 +890,7 @@ void init(void) {
 }
 
 int main(int argc, char** argv) {
+	// Calls the function to initialize the UI buttons
 	initUIButton();
 
 	glutInit(&argc, argv);
@@ -797,6 +901,7 @@ int main(int argc, char** argv) {
 	init();
 	createGLUTMenus();
 
+	// Assign the callback functions
 	glutDisplayFunc(renderScene);
 	glutReshapeFunc(reshapeScene);
 	glutMouseFunc(mouseClick);
@@ -804,6 +909,7 @@ int main(int argc, char** argv) {
 
 	glutMainLoop();
 
+	// Before the program exits, clear up the UI buttons and drawing frames
 	disposeUIButton();
 	disposeDrawingFrames();
 
